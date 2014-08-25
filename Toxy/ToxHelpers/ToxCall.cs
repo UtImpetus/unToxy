@@ -15,8 +15,6 @@ namespace Toxy.ToxHelpers
         private WaveOut wave_out;
         private BufferedWaveProvider wave_provider;
 
-        private Thread thread;
-
         private uint frame_size;
 
         public int CallIndex;
@@ -62,16 +60,10 @@ namespace Toxy.ToxHelpers
 
             wave_source.WaveFormat = format;
             wave_source.DataAvailable += wave_source_DataAvailable;
-            wave_source.RecordingStopped += wave_source_RecordingStopped;
             wave_source.BufferMilliseconds = (int)toxav.CodecSettings.AudioFrameDuration;
             wave_source.StartRecording();
 
             wave_out.Play();
-        }
-
-        private void wave_source_RecordingStopped(object sender, StoppedEventArgs e)
-        {
-            Console.WriteLine("Recording stopped");
         }
 
         public void ProcessAudioFrame(short[] frame, int frame_size)
@@ -122,14 +114,22 @@ namespace Toxy.ToxHelpers
                 wave_out.Dispose();
             }
 
-            if (thread != null)
-            {
-                thread.Abort();
-                thread.Join();
-            }
-
             toxav.KillTransmission(CallIndex);
             toxav.Hangup(CallIndex);
+        }
+
+        public void SwitchInputDevice(int index)
+        {
+            wave_source.StopRecording();
+            wave_source.DeviceNumber = index;
+            wave_source.StartRecording();
+        }
+
+        public void SwitchOutputDevice(int index)
+        {
+            wave_out.Stop();
+            wave_out.DeviceNumber = index;
+            wave_out.Play();
         }
 
         public void Answer()

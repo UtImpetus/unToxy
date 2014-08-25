@@ -814,7 +814,7 @@ namespace Toxy
             {
                 return doc.FindChildren<TableRow>().Last(t => t.Tag.GetType() != typeof(FileTransfer));
             }
-            catch (Exception e)
+            catch
             {
                 return null;
             }
@@ -1348,6 +1348,15 @@ namespace Toxy
                 ThemeManager.ChangeAppStyle(System.Windows.Application.Current, theme.Item2, appTheme);
 
                 config.Theme = themeName;
+            }
+
+            if (call != null)
+            {
+                if (InputDevicesComboBox.SelectedIndex != config.InputDevice)
+                    call.SwitchInputDevice(InputDevicesComboBox.SelectedIndex);
+
+                if (OutputDevicesComboBox.SelectedIndex != config.OutputDevice)
+                    call.SwitchOutputDevice(OutputDevicesComboBox.SelectedIndex);
             }
 
             int index = InputDevicesComboBox.SelectedIndex + 1;
