@@ -650,7 +650,6 @@ namespace Toxy
 
             if (status == 0)
             {
-
                 DateTime lastOnline = tox.GetLastOnline(friendnumber);
                 if (lastOnline == emptyLastOnline)
                 {
