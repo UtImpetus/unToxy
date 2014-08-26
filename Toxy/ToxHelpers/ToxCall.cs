@@ -1,8 +1,15 @@
 ﻿using System;
 using System.Threading;
-using NAudio.Wave;
+using System.Drawing;
+
 using SharpTox.Av;
 using SharpTox.Core;
+using SharpTox.Vpx;
+
+using NAudio.Wave;
+using AForge.Video;
+using AForge.Video.DirectShow;
+using System.Runtime.InteropServices;
 
 namespace Toxy.ToxHelpers
 {
@@ -11,20 +18,24 @@ namespace Toxy.ToxHelpers
         private Tox tox;
         private ToxAv toxav;
 
-        private WaveIn wave_source;
-        private WaveOut wave_out;
-        private BufferedWaveProvider wave_provider;
+        private WaveIn waveSource;
+        private WaveOut waveOut;
+        private VideoCaptureDevice videoSource;
+        private BufferedWaveProvider waveProvider;
+        private VideoWindow videoWindow;
 
         private uint frame_size;
 
         public int CallIndex;
         public int FriendNumber;
+        public bool VideoSupport;
 
-        public ToxCall(Tox tox, ToxAv toxav, int callindex, int friendnumber)
+        public ToxCall(Tox tox, ToxAv toxav, int callindex, int friendnumber, bool videoSupport)
         {
             this.tox = tox;
             this.toxav = toxav;
             this.FriendNumber = friendnumber;
+            this.VideoSupport = videoSupport;
 
             CallIndex = callindex;
         }
@@ -40,36 +51,77 @@ namespace Toxy.ToxHelpers
             frame_size = toxav.CodecSettings.AudioSampleRate * toxav.CodecSettings.AudioFrameDuration / 1000;
 
             //who doesn't love magic numbers?!
-            toxav.PrepareTransmission(CallIndex, 3, 40, false);
+            toxav.PrepareTransmission(CallIndex, 3, 40, VideoSupport);
 
             WaveFormat format = new WaveFormat((int)toxav.CodecSettings.AudioSampleRate, (int)toxav.CodecSettings.AudioChannels);
-            wave_provider = new BufferedWaveProvider(format);
-            wave_provider.DiscardOnBufferOverflow = true;
+            waveProvider = new BufferedWaveProvider(format);
+            waveProvider.DiscardOnBufferOverflow = true;
 
-            wave_out = new WaveOut();
+            waveOut = new WaveOut();
 
             if (output != -1)
-                wave_out.DeviceNumber = output;
+                waveOut.DeviceNumber = output;
 
-            wave_out.Init(wave_provider);
+            waveOut.Init(waveProvider);
 
-            wave_source = new WaveIn();
+            waveSource = new WaveIn();
 
             if (input != -1)
-                wave_source.DeviceNumber = input;
+                waveSource.DeviceNumber = input;
 
-            wave_source.WaveFormat = format;
-            wave_source.DataAvailable += wave_source_DataAvailable;
-            wave_source.BufferMilliseconds = (int)toxav.CodecSettings.AudioFrameDuration;
-            wave_source.StartRecording();
+            waveSource.WaveFormat = format;
+            waveSource.DataAvailable += wave_source_DataAvailable;
+            waveSource.BufferMilliseconds = (int)toxav.CodecSettings.AudioFrameDuration;
+            waveSource.StartRecording();
 
-            wave_out.Play();
+            waveOut.Play();
+
+            //webcam detection stuff
+            if (VideoSupport)
+            {
+                FilterInfoCollection list = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+                videoSource = new VideoCaptureDevice(list[0].MonikerString);
+                videoSource.NewFrame += video_source_NewFrame;
+                videoSource.Start();
+
+                videoWindow = new VideoWindow();
+                videoWindow.Show();
+            }
+        }
+
+        private void video_source_NewFrame(object sender, NewFrameEventArgs eventArgs)
+        {
+            sendVideoFrame(eventArgs.Frame);
         }
 
         public void ProcessAudioFrame(short[] frame, int frame_size)
         {
             byte[] bytes = ShortArrayToByteArray(frame);
-            wave_provider.AddSamples(bytes, 0, bytes.Length);
+            waveProvider.AddSamples(bytes, 0, bytes.Length);
+        }
+
+        public unsafe void ProcessVideoFrame(IntPtr frame)
+        {
+            VpxImage image = VpxImage.FromPointer((void*)frame);
+
+            if (videoWindow == null)
+            {
+                image.Free();
+                return;
+            }
+
+            byte[] dest = new byte[image.d_w * image.d_h * 4];
+
+            fixed (byte* b = dest)
+                VpxHelper.Yuv420ToRgb(image, b);
+
+            image.Free();
+
+            GCHandle handle = GCHandle.Alloc(dest, GCHandleType.Pinned);
+            Bitmap bitmap = Bitmap.FromHbitmap(GdiWrapper.CreateBitmap((int)image.d_w, (int)image.d_h, 1, 32, handle.AddrOfPinnedObject()));
+            handle.Free();
+
+            videoWindow.PushVideoFrame(bitmap);
         }
 
         private byte[] ShortArrayToByteArray(short[] shorts)
@@ -102,17 +154,27 @@ namespace Toxy.ToxHelpers
         {
             //TODO: we might want to block here until RecordingStopped and PlaybackStopped are fired
 
-            if (wave_source != null)
+            if (waveSource != null)
             {
-                wave_source.StopRecording();
-                wave_source.Dispose();
+                waveSource.StopRecording();
+                waveSource.Dispose();
             }
 
-            if (wave_out != null)
+            if (waveOut != null)
             {
-                wave_out.Stop();
-                wave_out.Dispose();
+                waveOut.Stop();
+                waveOut.Dispose();
             }
+
+            if (videoSource != null)
+            {
+                videoSource.SignalToStop();
+                videoSource.NewFrame -= video_source_NewFrame;
+                videoSource = null;
+            }
+
+            if (videoWindow != null)
+                videoWindow.Close();
 
             toxav.KillTransmission(CallIndex);
             toxav.Hangup(CallIndex);
@@ -120,25 +182,25 @@ namespace Toxy.ToxHelpers
 
         public void SwitchInputDevice(int index)
         {
-            wave_source.StopRecording();
-            wave_source.DeviceNumber = index;
-            wave_source.StartRecording();
+            waveSource.StopRecording();
+            waveSource.DeviceNumber = index;
+            waveSource.StartRecording();
         }
 
         public void SwitchOutputDevice(int index)
         {
-            wave_out.Stop();
-            wave_out.Dispose();
+            waveOut.Stop();
+            waveOut.Dispose();
 
-            wave_out = new WaveOut();
-            wave_out.DeviceNumber = index;
-            wave_out.Init(wave_provider);
-            wave_out.Play();
+            waveOut = new WaveOut();
+            waveOut.DeviceNumber = index;
+            waveOut.Init(waveProvider);
+            waveOut.Play();
         }
 
-        public void Answer()
+        public void Answer(ToxAvCodecSettings settings)
         {
-            ToxAvError error = toxav.Answer(CallIndex, ToxAv.DefaultCodecSettings);
+            ToxAvError error = toxav.Answer(CallIndex, settings);
             if (error != ToxAvError.None)
                 throw new Exception("Could not answer call " + error.ToString());
         }
@@ -146,6 +208,66 @@ namespace Toxy.ToxHelpers
         public void Call(int current_number, ToxAvCodecSettings settings, int ringing_seconds)
         {
             toxav.Call(current_number, settings, ringing_seconds, out CallIndex);
+        }
+
+        private void sendVideoFrame(System.Drawing.Bitmap frame)
+        {
+            unsafe
+            {
+                GdiWrapper.BITMAPINFO info = new GdiWrapper.BITMAPINFO()
+                {
+                    bmiHeader =
+                    {
+                        biSize = (uint)sizeof(GdiWrapper.BITMAPINFOHEADER),
+                        biWidth = frame.Width,
+                        biHeight = -frame.Height,
+                        biPlanes = 1,
+                        biBitCount = 24,
+                        biCompression = GdiWrapper.BitmapCompressionMode.BI_RGB
+                    }
+                };
+
+                byte[] bytes = new byte[frame.Width * frame.Height * 3];
+                IntPtr context = GdiWrapper.CreateCompatibleDC(IntPtr.Zero);
+                IntPtr hbitmap = frame.GetHbitmap();
+
+                GdiWrapper.GetDIBits(context, hbitmap, 0, (uint)frame.Height, bytes, ref info, GdiWrapper.DIB_Color_Mode.DIB_RGB_COLORS);
+                GdiWrapper.DeleteObject(hbitmap);
+                GdiWrapper.DeleteDC(context);
+
+                byte[] dest = new byte[frame.Width * frame.Height * 4];
+
+                try
+                {
+                    VpxImage img = VpxImage.Create(VpxImageFormat.VPX_IMG_FMT_I420, (ushort)frame.Width, (ushort)frame.Height, 1);
+
+                    fixed (byte* b = bytes)
+                        VpxHelper.RgbToYuv420(img, b, (ushort)frame.Width, (ushort)frame.Height);
+
+                    int length = ToxAvFunctions.PrepareVideoFrame(toxav.GetHandle(), CallIndex, dest, dest.Length, new IntPtr(img.Pointer));
+                    img.Free();
+
+                    if (length > 0)
+                    {
+                        byte[] bytesToSend = new byte[length];
+                        Array.Copy(dest, bytesToSend, length);
+
+                        ToxAvError error = ToxAvFunctions.SendVideo(toxav.GetHandle(), CallIndex, bytesToSend, (uint)bytesToSend.Length);
+                        if (error != ToxAvError.None)
+                            Console.WriteLine("Could not send video frame: {0}, {1}", error, length);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Could not prepare frame: {0}", (ToxAvError)length);
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine("Could not convert frame");
+                }
+
+                frame.Dispose();
+            }
         }
     }
 }
