@@ -100,9 +100,9 @@ namespace Toxy.ToxHelpers
             waveProvider.AddSamples(bytes, 0, bytes.Length);
         }
 
-        public unsafe void ProcessVideoFrame(IntPtr frame)
+        public void ProcessVideoFrame(IntPtr frame)
         {
-            VpxImage image = VpxImage.FromPointer((void*)frame);
+            VpxImage image = VpxImage.FromPointer(frame);
 
             if (videoWindow == null)
             {
@@ -110,10 +110,7 @@ namespace Toxy.ToxHelpers
                 return;
             }
 
-            byte[] dest = new byte[image.d_w * image.d_h * 4];
-
-            fixed (byte* b = dest)
-                VpxHelper.Yuv420ToRgb(image, b);
+            byte[] dest = VpxHelper.Yuv420ToRgb(image, image.d_w * image.d_h * 4);
 
             image.Free();
 
@@ -212,62 +209,60 @@ namespace Toxy.ToxHelpers
 
         private void sendVideoFrame(System.Drawing.Bitmap frame)
         {
-            unsafe
+            GdiWrapper.BITMAPINFO info = new GdiWrapper.BITMAPINFO()
             {
-                GdiWrapper.BITMAPINFO info = new GdiWrapper.BITMAPINFO()
+                bmiHeader =
                 {
-                    bmiHeader =
-                    {
-                        biSize = (uint)sizeof(GdiWrapper.BITMAPINFOHEADER),
-                        biWidth = frame.Width,
-                        biHeight = -frame.Height,
-                        biPlanes = 1,
-                        biBitCount = 24,
-                        biCompression = GdiWrapper.BitmapCompressionMode.BI_RGB
-                    }
-                };
-
-                byte[] bytes = new byte[frame.Width * frame.Height * 3];
-                IntPtr context = GdiWrapper.CreateCompatibleDC(IntPtr.Zero);
-                IntPtr hbitmap = frame.GetHbitmap();
-
-                GdiWrapper.GetDIBits(context, hbitmap, 0, (uint)frame.Height, bytes, ref info, GdiWrapper.DIB_Color_Mode.DIB_RGB_COLORS);
-                GdiWrapper.DeleteObject(hbitmap);
-                GdiWrapper.DeleteDC(context);
-
-                byte[] dest = new byte[frame.Width * frame.Height * 4];
-
-                try
-                {
-                    VpxImage img = VpxImage.Create(VpxImageFormat.VPX_IMG_FMT_I420, (ushort)frame.Width, (ushort)frame.Height, 1);
-
-                    fixed (byte* b = bytes)
-                        VpxHelper.RgbToYuv420(img, b, (ushort)frame.Width, (ushort)frame.Height);
-
-                    int length = ToxAvFunctions.PrepareVideoFrame(toxav.GetHandle(), CallIndex, dest, dest.Length, new IntPtr(img.Pointer));
-                    img.Free();
-
-                    if (length > 0)
-                    {
-                        byte[] bytesToSend = new byte[length];
-                        Array.Copy(dest, bytesToSend, length);
-
-                        ToxAvError error = ToxAvFunctions.SendVideo(toxav.GetHandle(), CallIndex, bytesToSend, (uint)bytesToSend.Length);
-                        if (error != ToxAvError.None)
-                            Console.WriteLine("Could not send video frame: {0}, {1}", error, length);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Could not prepare frame: {0}", (ToxAvError)length);
-                    }
+                    biWidth = frame.Width,
+                    biHeight = -frame.Height,
+                    biPlanes = 1,
+                    biBitCount = 24,
+                    biCompression = GdiWrapper.BitmapCompressionMode.BI_RGB
                 }
-                catch
-                {
-                    Console.WriteLine("Could not convert frame");
-                }
+            };
 
-                frame.Dispose();
+            info.bmiHeader.Init();
+
+            byte[] bytes = new byte[frame.Width * frame.Height * 3];
+            IntPtr context = GdiWrapper.CreateCompatibleDC(IntPtr.Zero);
+            IntPtr hbitmap = frame.GetHbitmap();
+
+            GdiWrapper.GetDIBits(context, hbitmap, 0, (uint)frame.Height, bytes, ref info, GdiWrapper.DIB_Color_Mode.DIB_RGB_COLORS);
+            GdiWrapper.DeleteObject(hbitmap);
+            GdiWrapper.DeleteDC(context);
+
+            byte[] dest = new byte[frame.Width * frame.Height * 4];
+
+            try
+            {
+                VpxImage img = VpxImage.Create(VpxImageFormat.VPX_IMG_FMT_I420, (ushort)frame.Width, (ushort)frame.Height, 1);
+
+                //fixed (byte* b = bytes)
+                VpxHelper.RgbToYuv420(img, bytes, (ushort)frame.Width, (ushort)frame.Height);
+
+                int length = ToxAvFunctions.PrepareVideoFrame(toxav.GetHandle(), CallIndex, dest, dest.Length, (IntPtr)img.Pointer);
+                img.Free();
+
+                if (length > 0)
+                {
+                    byte[] bytesToSend = new byte[length];
+                    Array.Copy(dest, bytesToSend, length);
+
+                    ToxAvError error = ToxAvFunctions.SendVideo(toxav.GetHandle(), CallIndex, bytesToSend, (uint)bytesToSend.Length);
+                    if (error != ToxAvError.None)
+                        Console.WriteLine("Could not send video frame: {0}, {1}", error, length);
+                }
+                else
+                {
+                    Console.WriteLine("Could not prepare frame: {0}", (ToxAvError)length);
+                }
             }
+            catch
+            {
+                Console.WriteLine("Could not convert frame");
+            }
+
+            frame.Dispose();
         }
     }
 }
