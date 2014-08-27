@@ -266,5 +266,6 @@ namespace Toxy.ViewModels
         }
 
         public int CallIndex { get; set; }
+        public string PublicKey { get; set; }
     }
 }

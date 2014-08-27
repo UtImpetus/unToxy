@@ -146,5 +146,7 @@ namespace Toxy.ViewModels
             }
         }
 
+
+        public string PublicKey { get; set; }
     }
 }

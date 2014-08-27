@@ -31,6 +31,8 @@ using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
 
 using NAudio.Wave;
+using Toxy.Utils;
+using System.Windows.Threading;
 
 namespace Toxy
 {
@@ -43,6 +45,7 @@ namespace Toxy
         private Dictionary<int, FlowDocument> convdic = new Dictionary<int, FlowDocument>();
         private Dictionary<int, FlowDocument> groupdic = new Dictionary<int, FlowDocument>();
         private List<FileTransfer> transfers = new List<FileTransfer>();
+        private List<string> keysOfConnectedGroupChats = new List<string>();
 
         private bool resizing = false;
         private bool focusTextbox = false;
@@ -154,6 +157,44 @@ namespace Toxy
 
             if (tox.GetFriendlistCount() > 0)
                 this.ViewModel.SelectedChatObject = this.ViewModel.ChatCollection.OfType<IFriendObject>().FirstOrDefault();
+
+            if (config.GroupChats != null)
+            {
+                foreach (var chat in config.GroupChats)
+                {
+                    AddInactiveGroupToView(chat);
+                }
+            }
+
+            DispatcherTimer dispatcherTimer = new DispatcherTimer();
+            dispatcherTimer.Tick += dispatcherTimer_Tick;
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 5);
+            dispatcherTimer.Start();
+        }
+
+        void dispatcherTimer_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                if (config.GroupChats != null)
+                {
+                    var inactiveChats = config.GroupChats.Where(v => keysOfConnectedGroupChats.All(k => k != v.PublicKey)).ToList();
+                    foreach (var chat in inactiveChats)
+                    {
+                        var groupNumber = tox.JoinGroup(chat.FriendNumber, chat.PublicKey);
+                        if (groupNumber != -1)
+                        {
+                            chat.GroupNumber = groupNumber;
+                            keysOfConnectedGroupChats.Add(chat.PublicKey);
+                            UpdateGroupToOnlineStatus(chat);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void applyConfig()
@@ -409,17 +450,18 @@ namespace Toxy
 
         private void tox_OnGroupInvite(int groupnumber, string group_public_key)
         {
-            //auto join groupchats for now
-            var group = this.ViewModel.GetGroupObjectByNumber(groupnumber);
-
-            if (group == null)
+            if (config.GroupChats != null && config.GroupChats.Any(v => v.PublicKey == group_public_key))
             {
-                if (tox.JoinGroup(groupnumber, group_public_key) != -1)
-                    AddGroupToView(groupnumber);
+                var group = this.ViewModel.GetGroupObjectByNumber(group_public_key);
+                if(group!=null)
+                {
+                    SelectGroupControl(group);
+                }
             }
             else
             {
-                SelectGroupControl(group);
+                GroupChatHelpers.AddNewGoupToConfig(group_public_key, groupnumber, config);
+                AddInactiveGroupToView(config.GroupChats.Last());
             }
         }
 
@@ -886,6 +928,29 @@ namespace Toxy
             this.ViewModel.ChatCollection.Add(groupMV);
         }
 
+        private void UpdateGroupToOnlineStatus(GroupChat groupChat)
+        {
+            var groupMV = this.ViewModel.ChatCollection.FirstOrDefault(v=>v.PublicKey == groupChat.PublicKey);
+            if (groupMV != null)
+            {
+                groupMV.ChatNumber = groupChat.GroupNumber;
+                groupMV.StatusMessage = string.Format("Peers online: {0}", tox.GetGroupMemberCount(groupChat.GroupNumber));
+            }
+        }
+
+        private void AddInactiveGroupToView(GroupChat groupChat)
+        {
+            var groupMV = new GroupControlModelView();
+            groupMV.ChatNumber = -1;
+            groupMV.Name = groupChat.Name;
+            groupMV.PublicKey = groupChat.PublicKey;
+            groupMV.StatusMessage = "Waiting...";
+            groupMV.SelectedAction = GroupSelectedAction;
+            groupMV.DeleteAction = GroupDeleteAction;
+
+            this.ViewModel.ChatCollection.Add(groupMV);
+        }
+
         private void GroupDeleteAction(IGroupObject groupObject)
         {
             this.ViewModel.ChatCollection.Remove(groupObject);
@@ -898,6 +963,7 @@ namespace Toxy
                     ChatBox.Document = null;
             }
             tox.DeleteGroupChat(groupNumber);
+            GroupChatHelpers.RemoveGroupFromConfig(config, groupObject.PublicKey);
             groupObject.SelectedAction = null;
             groupObject.DeleteAction = null;
         }
@@ -1089,7 +1155,7 @@ namespace Toxy
 
         private void SelectGroupControl(IGroupObject group)
         {
-            if (group == null)
+            if (group == null || group.ChatNumber==-1)
             {
                 return;
             }
@@ -1295,7 +1361,7 @@ namespace Toxy
             {
                 if (ex.Error != ToxAFError.SetNewNospam)
                     this.ShowMessageAsync("An error occurred", Tools.GetAFError(ex.Error));
-                
+
                 return;
             }
             catch

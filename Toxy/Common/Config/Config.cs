@@ -111,6 +111,14 @@ namespace Toxy.Common
             get { return nameServices; }
             set { nameServices = value; }
         }
+
+        private GroupChat[] groupChats = new GroupChat[0];
+
+        public GroupChat[] GroupChats
+        {
+            get { return groupChats; }
+            set { groupChats = value; }
+        }
     }
 
     [Serializable]
@@ -128,5 +136,14 @@ namespace Toxy.Common
         public string Domain { get; set; }
         public string PublicKey { get; set; }
         public string PublicKeyUrl { get; set; }
+    }
+
+    [Serializable]
+    public class GroupChat
+    {
+        public string Name { get; set; }
+        public string PublicKey { get; set; }
+        public int GroupNumber { get; set; }
+        public int FriendNumber { get; set; }
     }
 }

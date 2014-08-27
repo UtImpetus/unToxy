@@ -218,9 +218,15 @@ namespace Toxy.ViewModels
             return fo;
         }
 
-        public IGroupObject GetGroupObjectByNumber(int groupnumber)
+        public IGroupObject GetGroupObjectByNumber(int number)
         {
-            var go = ChatCollection.OfType<IGroupObject>().FirstOrDefault(f => f.ChatNumber == groupnumber);
+            var go = ChatCollection.OfType<IGroupObject>().FirstOrDefault(f => f.ChatNumber == number);
+            return go;
+        }
+
+        public IGroupObject GetGroupObjectByNumber(string publicKey)
+        {
+            var go = ChatCollection.OfType<IGroupObject>().FirstOrDefault(f => f.PublicKey == publicKey);
             return go;
         }
     }
