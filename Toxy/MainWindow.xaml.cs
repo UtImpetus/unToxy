@@ -947,7 +947,7 @@ namespace Toxy
             groupMV.StatusMessage = "Waiting...";
             groupMV.SelectedAction = GroupSelectedAction;
             groupMV.DeleteAction = GroupDeleteAction;
-
+            groupMV.RenameAction = GroupRenameAction;
             this.ViewModel.ChatCollection.Add(groupMV);
         }
 
@@ -966,6 +966,18 @@ namespace Toxy
             GroupChatHelpers.RemoveGroupFromConfig(config, groupObject.PublicKey);
             groupObject.SelectedAction = null;
             groupObject.DeleteAction = null;
+            groupObject.RenameAction = null;
+        }
+
+        private void GroupRenameAction(IGroupObject groupObject)
+        {
+            var dialog = new UserPrompt();
+            dialog.ResponseText = groupObject.Name;
+            if (dialog.ShowDialog() == true && !string.IsNullOrEmpty(dialog.ResponseText))
+            {
+                GroupChatHelpers.RenameGroup(config, groupObject.PublicKey, dialog.ResponseText);
+                groupObject.Name = dialog.ResponseText;
+            }
         }
 
         private void GroupSelectedAction(IGroupObject groupObject, bool isSelected)

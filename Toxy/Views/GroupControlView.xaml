@@ -14,8 +14,8 @@
 
     <UserControl.ContextMenu>
         <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-            <MenuItem Header="Delete"
-                      Command="{Binding DeleteCommand, Mode=OneWay}" />
+            <MenuItem Header="Delete" Command="{Binding DeleteCommand, Mode=OneWay}" />
+            <MenuItem Header="Rename" Command="{Binding RenameCommand, Mode=OneWay}" />
         </ContextMenu>
     </UserControl.ContextMenu>
 

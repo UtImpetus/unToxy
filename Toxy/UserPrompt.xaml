@@ -1,0 +1,21 @@
+﻿<Window x:Class="Toxy.UserPrompt"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Please enter new name" Height="108" Width="486" ResizeMode="NoResize" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterScreen">
+    <StackPanel Margin="0,0,2,0">
+        <TextBlock Text="Enter new name" />
+        <TextBox x:Name="ResponseTextBox" />
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Row="0" Grid.Column="0"  Content="Cancel" Click="CancelButton_Click" Margin="0,0,0,0" HorizontalAlignment="Right" Width="148" />
+            <Button Grid.Column="1" Grid.Row="0" Content="OK" Click="OKButton_Click" Margin="0,0,0,0" HorizontalAlignment="Right" Width="148" />
+        </Grid>
+    </StackPanel>
+</Window>

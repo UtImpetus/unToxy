@@ -34,5 +34,18 @@ namespace Toxy.Utils
                 ConfigTools.Save(config, "config.xml");
             }
         }
+
+        internal static void RenameGroup(Config config, string publicKey, string newName)
+        {
+            if (config.GroupChats != null)
+            {
+                var group = config.GroupChats.FirstOrDefault(v=>v.PublicKey==publicKey);
+                if (group != null)
+                {
+                    group.Name = newName;
+                    ConfigTools.Save(config, "config.xml");
+                }
+            }
+        }
     }
 }
