@@ -29,7 +29,7 @@ Feel free to contribute.
 
 Binaries
 ===
-Pre-compiled versions of Toxy can be found [here](http://jenkins.impy.me/ "Toxy Binaries"). Those include all of the dependencies.
+Pre-compiled versions of Toxy can be found [here](http://1drv.ms/1pkwaFp "Toxy Binaries"). Those include all of the dependencies.
 
 Things you'll need to compile
 ===

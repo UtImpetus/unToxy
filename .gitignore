@@ -156,3 +156,4 @@ libs/libtoxav.dll
 libs/SharpTox.dll
 libs/libtox.dll
 libs/SharpTox.XML
+Build automation/*.zip
