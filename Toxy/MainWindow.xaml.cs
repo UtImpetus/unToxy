@@ -854,10 +854,11 @@ namespace Toxy
         {
             try
             {
-                return doc.FindChildren<TableRow>().Last(t => t.Tag.GetType() != typeof(FileTransfer));
+                return doc.FindChildren<TableRow>().LastOrDefault(t => t.Tag.GetType() != typeof(FileTransfer));
             }
             catch (Exception e)
             {
+                Logger.LogException(e);
                 return null;
             }
         }
@@ -924,7 +925,7 @@ namespace Toxy
             groupMV.StatusMessage = string.Format("Peers online: {0}", tox.GetGroupMemberCount(groupnumber));//string.Join(", ", tox.GetGroupNames(groupnumber));
             groupMV.SelectedAction = GroupSelectedAction;
             groupMV.DeleteAction = GroupDeleteAction;
-
+            groupMV.RenameAction = GroupRenameAction;
             this.ViewModel.ChatCollection.Add(groupMV);
         }
 
@@ -1555,7 +1556,7 @@ namespace Toxy
 
         private void GithubButton_Click(object sender, RoutedEventArgs e)
         {
-            Process.Start("https://github.com/Reverp/Toxy-WPF");
+            Process.Start("https://github.com/DmitryStrunevsky/Toxy");
         }
 
         private void TextToSend_TextChanged(object sender, TextChangedEventArgs e)

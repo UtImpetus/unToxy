@@ -119,6 +119,7 @@
     <Compile Include="Common\Config\Config.cs" />
     <Compile Include="Common\Config\ConfigTools.cs" />
     <Compile Include="Common\ListBoxScrollViewerAttachedBehavior.cs" />
+    <Compile Include="Common\Logger.cs" />
     <Compile Include="Common\StringExtensions.cs" />
     <Compile Include="Common\VisualExtensions.cs" />
     <Compile Include="Converter\BoolToVisibilityConverter.cs" />
@@ -128,6 +129,7 @@
       <DependentUpon>UserPrompt.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utils\GroupChatHelpers.cs" />
+    <Compile Include="Utils\HttpHelpers.cs" />
     <Compile Include="ViewModels\FriendControlModelView.cs" />
     <Compile Include="ViewModels\GroupControlModelView.cs" />
     <Compile Include="ViewModels\IChatObject.cs" />
@@ -259,6 +261,7 @@
       <Link>libtox.dll</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Resources\Icons\groupChatPicture.png" />
     <Resource Include="Resources\Icons\icon2.ico" />
     <Resource Include="Resources\Icons\icon.ico" />
   </ItemGroup>

@@ -25,7 +25,7 @@ Feel free to contribute.
 
 ### Screenshots
 
-![Main Window](http://reverbs.pw/i/46f5a9.png)
+![Main Window](http://img-fotki.yandex.ru/get/12/32246118.21/0_7e4af_c819933_orig)
 
 Binaries
 ===

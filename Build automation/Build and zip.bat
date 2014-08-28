@@ -7,9 +7,11 @@ XCOPY ..\Toxy\bin\x86\Debug Toxy_x86\ /s /e
 XCOPY ..\Toxy\bin\x64\Debug Toxy_x64\ /s /e
 del Toxy_x86\data
 del Toxy_x86\config.xml
+del Toxy_x64\log.txt
 del Toxy_x64\data
 del Toxy_x64\config.xml
-zip Toxy_x86_%mydate%_%mytime%.zip Toxy_x64\*
+del Toxy_x64\log.txt
+zip Toxy_x86_%mydate%_%mytime%.zip Toxy_x86\*
 zip Toxy_x64_%mydate%_%mytime%.zip Toxy_x64\*
 rmdir Toxy_x86 /s /q
 rmdir Toxy_x64 /s /q

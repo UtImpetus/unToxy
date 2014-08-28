@@ -9,6 +9,9 @@ using System.Windows.Media;
 using MahApps.Metro.Controls;
 using SharpTox.Core;
 using Toxy.Views;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
+using Toxy.Utils;
 
 namespace Toxy.Common
 {
@@ -46,11 +49,12 @@ namespace Toxy.Common
 
             if (data.IsSelf)
                 messageParagraph.Foreground = new SolidColorBrush(Color.FromRgb(164, 164, 164));
-
+            AddPreview(messageTableCell, data);
             ProcessMessage(data, messageParagraph, false);
 
             //messageParagraph.Inlines.Add(fakeHyperlink);
             messageTableCell.Blocks.Add(messageParagraph);
+           
 
             TableCell timestampTableCell = new TableCell();
             Paragraph timestamParagraph = new Paragraph();
@@ -62,10 +66,26 @@ namespace Toxy.Common
             newTableRow.Cells.Add(usernameTableCell);
             newTableRow.Cells.Add(messageTableCell);
             newTableRow.Cells.Add(timestampTableCell);
-
+            
             //Adds row to the Table > TableRowGroup
             TableRowGroup MessageRows = (TableRowGroup)document.FindName("MessageRows");
             MessageRows.Rows.Add(newTableRow);
+        }
+
+        private static void AddPreview(TableCell messageTableCell, MessageData data)
+        {
+            if (HttpHelpers.IsImageUrl(data.Message))
+            {
+                var previewButton = new Paragraph();
+                Image image = new Image();
+                BitmapImage bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.UriSource = new Uri(data.Message);
+                bitmapImage.EndInit();
+                image.Source = bitmapImage;
+                previewButton.Inlines.Add(image);
+                messageTableCell.Blocks.Add(previewButton);
+            }
         }
 
         public static FileTransfer AddNewFileTransfer(this FlowDocument doc, Tox tox, int friendnumber, int filenumber, string filename, ulong filesize, bool is_sender)
