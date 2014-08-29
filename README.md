@@ -1,5 +1,7 @@
-Toxy [![Build Status](http://jenkins.impy.me/job/Toxy%20x86/badge/icon)](http://jenkins.impy.me/job/Toxy%20x86/)
+unToxy
 ====
+
+unToxy - dirty ([Toxy](https://github.com/Reverp/Toxy "Toxy") clone.
 
 Metro-style Tox client for Windows. ([Tox](https://github.com/irungentoo/ProjectTox-Core "ProjectTox GitHub repo") is a free (as in freedom) Skype replacement.)
 
@@ -29,7 +31,7 @@ Feel free to contribute.
 
 Binaries
 ===
-Pre-compiled versions of Toxy can be found [here](http://1drv.ms/1pkwaFp "Toxy Binaries"). Those include all of the dependencies.
+Pre-compiled versions of unToxy can be found [here](http://1drv.ms/1pkwaFp "unToxy Binaries"). Those include all of the dependencies.
 
 Things you'll need to compile
 ===
