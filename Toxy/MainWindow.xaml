@@ -13,7 +13,7 @@
                       xmlns:common="clr-namespace:Toxy.Common"
                       x:Class="Toxy.MainWindow"
                       x:Name="mv"
-                      Title="Toxy"
+                      Title="unToxy"
                       MinWidth="700"
                       MinHeight="600"
                       Height="600"
@@ -32,7 +32,7 @@
     <controls:MetroWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/Toxy;component/Resources/Icons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/unToxy;component/Resources/Icons.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </controls:MetroWindow.Resources>

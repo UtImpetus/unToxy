@@ -11,7 +11,7 @@ namespace Toxy.Common
     {
         public static void LogException(Exception ex)
         {
-            File.AppendAllText("log.txt", ex.ToString());
+            File.AppendAllText("log.txt", DateTime.Now.ToString() + " " + ex.ToString());
         }
     }
 }

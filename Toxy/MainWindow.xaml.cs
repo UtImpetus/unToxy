@@ -60,8 +60,8 @@ namespace Toxy
 
         private DateTime emptyLastOnline = new DateTime(1970, 1, 1, 0, 0, 0);
         System.Windows.Forms.NotifyIcon nIcon = new System.Windows.Forms.NotifyIcon();
-        Stream newMessageIconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Toxy;component/Resources/Icons/icon2.ico")).Stream;
-        Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Toxy;component/Resources/Icons/icon.ico")).Stream;
+        Stream newMessageIconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/unToxy;component/Resources/Icons/icon2.ico")).Stream;
+        Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/unToxy;component/Resources/Icons/icon.ico")).Stream;
         private Icon notifyIcon;
         private Icon newMessageNotifyIcon;
 
@@ -88,6 +88,8 @@ namespace Toxy
                 options = new ToxOptions(config.Ipv6Enabled, config.UdpDisabled);
 
             applyConfig();
+
+            ChatHistoryHelper.InitLogDatabase();
 
             tox = new Tox(options);
             tox.Invoker = Dispatcher.BeginInvoke;
@@ -234,8 +236,8 @@ namespace Toxy
 
         private void InitializeNotifyIcon()
         {
-            Stream newMessageIconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Toxy;component/Resources/Icons/icon2.ico")).Stream;
-            Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Toxy;component/Resources/Icons/icon.ico")).Stream;
+            Stream newMessageIconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/unToxy;component/Resources/Icons/icon2.ico")).Stream;
+            Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/unToxy;component/Resources/Icons/icon.ico")).Stream;
 
             notifyIcon = new Icon(iconStream);
             newMessageNotifyIcon = new Icon(newMessageIconStream);
@@ -278,6 +280,7 @@ namespace Toxy
 
         private void closeMenuItem_Click(object sender, EventArgs eventArgs)
         {
+            ChatHistoryHelper.Close();
             config.HideInTray = false;
             this.Close();
         }
@@ -453,7 +456,7 @@ namespace Toxy
             if (config.GroupChats != null && config.GroupChats.Any(v => v.PublicKey == group_public_key))
             {
                 var group = this.ViewModel.GetGroupObjectByNumber(group_public_key);
-                if(group!=null)
+                if (group != null)
                 {
                     SelectGroupControl(group);
                 }
@@ -780,7 +783,8 @@ namespace Toxy
 
         private void tox_OnFriendMessage(int friendnumber, string message)
         {
-            MessageData data = new MessageData() { Username = tox.GetName(friendnumber), Message = message };
+            var friendName = tox.GetName(friendnumber);
+            MessageData data = new MessageData() { Username = friendName, Message = message };
 
             if (convdic.ContainsKey(friendnumber))
             {
@@ -823,6 +827,7 @@ namespace Toxy
 
             this.nIcon.Icon = newMessageNotifyIcon;
             this.ViewModel.HasNewMessage = true;
+            ChatHistoryHelper.AddLineToHistory(tox.GetClientID(friendnumber).GetString(), friendName, message);
         }
 
         private void ScrollChatBox()
@@ -931,7 +936,7 @@ namespace Toxy
 
         private void UpdateGroupToOnlineStatus(GroupChat groupChat)
         {
-            var groupMV = this.ViewModel.ChatCollection.FirstOrDefault(v=>v.PublicKey == groupChat.PublicKey);
+            var groupMV = this.ViewModel.ChatCollection.FirstOrDefault(v => v.PublicKey == groupChat.PublicKey);
             if (groupMV != null)
             {
                 groupMV.ChatNumber = groupChat.GroupNumber;
@@ -1168,8 +1173,9 @@ namespace Toxy
 
         private void SelectGroupControl(IGroupObject group)
         {
-            if (group == null || group.ChatNumber==-1)
+            if (group == null || group.ChatNumber == -1)
             {
+                group.Selected = false;
                 return;
             }
 
@@ -1188,6 +1194,7 @@ namespace Toxy
                 groupdic.Add(group.ChatNumber, document);
                 ChatBox.Document = groupdic[group.ChatNumber];
             }
+            ChatHistoryHelper.FillRecentHistory(tox, ChatBox.Document, group.PublicKey);
         }
 
         private void EndCall()
@@ -1266,6 +1273,7 @@ namespace Toxy
                 convdic.Add(friend.ChatNumber, document);
                 ChatBox.Document = convdic[friend.ChatNumber];
             }
+            ChatHistoryHelper.FillRecentHistory(tox, ChatBox.Document, tox.GetClientID(friendNumber).GetString());
         }
 
         private void MetroWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -1501,9 +1509,19 @@ namespace Toxy
                         int messageid = -1;
 
                         if (this.ViewModel.IsFriendSelected)
+                        {
                             messageid = tox.SendMessage(selectedChatNumber, message);
+                            ChatHistoryHelper.AddLineToHistory(tox.GetClientID(selectedChatNumber).GetString(), tox.GetSelfName(), message);
+                        }
                         else if (this.ViewModel.IsGroupSelected)
+                        {
                             tox.SendGroupMessage(selectedChatNumber, message);
+                            var group = this.ViewModel.GetGroupObjectByNumber(selectedChatNumber);
+                            if (group != null)
+                            {
+                                ChatHistoryHelper.AddLineToHistory(group.PublicKey, tox.GetSelfName(), message);
+                            }
+                        }
 
                         MessageData data = new MessageData() { Username = tox.GetSelfName(), Message = message, Id = messageid, IsSelf = this.ViewModel.IsFriendSelected };
 

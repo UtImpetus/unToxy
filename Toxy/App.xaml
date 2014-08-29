@@ -8,7 +8,7 @@
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
                 
                 <!-- custom styles -->
-                <ResourceDictionary Source="pack://application:,,,/Toxy;component/Styles/CustomStyles.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/unToxy;component/Styles/CustomStyles.xaml" />
                 
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Colors.xaml" />

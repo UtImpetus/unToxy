@@ -1,7 +1,7 @@
 unToxy
 ====
 
-unToxy - dirty ([Toxy](https://github.com/Reverp/Toxy "Toxy") clone.
+This is a fork of [Toxy](https://github.com/Reverp/Toxy).
 
 Metro-style Tox client for Windows. ([Tox](https://github.com/irungentoo/ProjectTox-Core "ProjectTox GitHub repo") is a free (as in freedom) Skype replacement.)
 
