@@ -6,6 +6,8 @@ using System.Windows.Media;
 using MahApps.Metro;
 using Toxy.MVVM;
 using NAudio.Wave;
+using Toxy.Common;
+using System.IO;
 
 namespace Toxy.ViewModels
 {
@@ -64,10 +66,37 @@ namespace Toxy.ViewModels
             this.AppThemes = ThemeManager.AppThemes
                                           .Select(a => new AppThemeMenuData() { Name = a.Name, BorderColorBrush = a.Resources["BlackColorBrush"] as Brush, ColorBrush = a.Resources["WhiteColorBrush"] as Brush })
                                           .ToList();
+
+            if (!File.Exists("config.xml"))
+            {
+                ConfigTools.Save(new Config(), "config.xml");
+            }
         }
 
         public List<AccentColorMenuData> AccentColors { get; set; }
         public List<AppThemeMenuData> AppThemes { get; set; }
+
+        Config conf;
+        public Config Configuraion { 
+            get 
+            {
+                if (conf == null)
+                {
+                    conf = ConfigTools.Load("config.xml");
+                }
+                return conf; 
+            }
+            set
+            {
+                conf = value;
+                ConfigTools.Save(value, "config.xml"); 
+            }
+        }
+
+        public void SaveConfiguraion()
+        {
+            ConfigTools.Save(conf, "config.xml");
+        }
 
         public List<OutputDeviceMenuData> OutputDevices 
         {

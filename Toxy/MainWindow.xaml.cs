@@ -55,7 +55,6 @@ namespace Toxy
         private Accent oldAccent;
         private AppTheme oldAppTheme;
 
-        private Config config;
         private string toxDataFilename = "data";
 
         private DateTime emptyLastOnline = new DateTime(1970, 1, 1, 0, 0, 0);
@@ -70,22 +69,12 @@ namespace Toxy
             InitializeComponent();
 
             this.DataContext = new MainWindowViewModel();
-
-            if (File.Exists("config.xml"))
-            {
-                config = ConfigTools.Load("config.xml");
-            }
-            else
-            {
-                config = new Config();
-                ConfigTools.Save(config, "config.xml");
-            }
-
+            
             ToxOptions options;
-            if (config.ProxyEnabled)
-                options = new ToxOptions(config.Ipv6Enabled, config.ProxyAddress, config.ProxyPort);
+            if (this.ViewModel.Configuraion.ProxyEnabled)
+                options = new ToxOptions(this.ViewModel.Configuraion.Ipv6Enabled, this.ViewModel.Configuraion.ProxyAddress, this.ViewModel.Configuraion.ProxyPort);
             else
-                options = new ToxOptions(config.Ipv6Enabled, config.UdpDisabled);
+                options = new ToxOptions(this.ViewModel.Configuraion.Ipv6Enabled, this.ViewModel.Configuraion.UdpDisabled);
 
             applyConfig();
 
@@ -126,7 +115,7 @@ namespace Toxy
             toxav.OnMediaChange += toxav_OnMediaChange;
 
             bool bootstrap_success = false;
-            foreach (ToxConfigNode node in config.Nodes)
+            foreach (ToxConfigNode node in this.ViewModel.Configuraion.Nodes)
             {
                 if (tox.BootstrapFromNode(new ToxNode(node.Address, node.Port, new ToxKey(ToxKeyType.Public, node.ClientId))))
                     bootstrap_success = true;
@@ -160,9 +149,9 @@ namespace Toxy
             if (tox.GetFriendlistCount() > 0)
                 this.ViewModel.SelectedChatObject = this.ViewModel.ChatCollection.OfType<IFriendObject>().FirstOrDefault();
 
-            if (config.GroupChats != null)
+            if (this.ViewModel.Configuraion.GroupChats != null)
             {
-                foreach (var chat in config.GroupChats)
+                foreach (var chat in this.ViewModel.Configuraion.GroupChats)
                 {
                     AddInactiveGroupToView(chat);
                 }
@@ -178,9 +167,9 @@ namespace Toxy
         {
             try
             {
-                if (config.GroupChats != null)
+                if (this.ViewModel.Configuraion.GroupChats != null)
                 {
-                    var inactiveChats = config.GroupChats.Where(v => keysOfConnectedGroupChats.All(k => k != v.PublicKey)).ToList();
+                    var inactiveChats = this.ViewModel.Configuraion.GroupChats.Where(v => keysOfConnectedGroupChats.All(k => k != v.PublicKey)).ToList();
                     foreach (var chat in inactiveChats)
                     {
                         var groupNumber = tox.JoinGroup(chat.FriendNumber, chat.PublicKey);
@@ -201,8 +190,8 @@ namespace Toxy
 
         private void applyConfig()
         {
-            var accent = ThemeManager.GetAccent(config.AccentColor);
-            var theme = ThemeManager.GetAppTheme(config.Theme);
+            var accent = ThemeManager.GetAccent(this.ViewModel.Configuraion.AccentColor);
+            var theme = ThemeManager.GetAppTheme(this.ViewModel.Configuraion.Theme);
 
             if (accent != null && theme != null)
                 ThemeManager.ChangeAppStyle(System.Windows.Application.Current, accent, theme);
@@ -281,7 +270,7 @@ namespace Toxy
         private void closeMenuItem_Click(object sender, EventArgs eventArgs)
         {
             ChatHistoryHelper.Close();
-            config.HideInTray = false;
+            this.ViewModel.Configuraion.HideInTray = false;
             this.Close();
         }
 
@@ -314,7 +303,7 @@ namespace Toxy
         private void toxav_OnStart(int call_index, IntPtr args)
         {
             if (call != null)
-                call.Start(config.InputDevice, config.OutputDevice);
+                call.Start(this.ViewModel.Configuraion.InputDevice, this.ViewModel.Configuraion.OutputDevice);
 
             int friendnumber = toxav.GetPeerID(call_index, 0);
             var callingFriend = this.ViewModel.GetFriendObjectByNumber(friendnumber);
@@ -453,7 +442,7 @@ namespace Toxy
 
         private void tox_OnGroupInvite(int groupnumber, string group_public_key)
         {
-            if (config.GroupChats != null && config.GroupChats.Any(v => v.PublicKey == group_public_key))
+            if (this.ViewModel.Configuraion.GroupChats != null && this.ViewModel.Configuraion.GroupChats.Any(v => v.PublicKey == group_public_key))
             {
                 var group = this.ViewModel.GetGroupObjectByNumber(group_public_key);
                 if (group != null)
@@ -463,8 +452,8 @@ namespace Toxy
             }
             else
             {
-                GroupChatHelpers.AddNewGoupToConfig(group_public_key, groupnumber, config);
-                AddInactiveGroupToView(config.GroupChats.Last());
+                GroupChatHelpers.AddNewGoupToConfig(group_public_key, groupnumber, this.ViewModel.Configuraion);
+                AddInactiveGroupToView(this.ViewModel.Configuraion.GroupChats.Last());
             }
         }
 
@@ -969,7 +958,7 @@ namespace Toxy
                     ChatBox.Document = null;
             }
             tox.DeleteGroupChat(groupNumber);
-            GroupChatHelpers.RemoveGroupFromConfig(config, groupObject.PublicKey);
+            GroupChatHelpers.RemoveGroupFromConfig(this.ViewModel.Configuraion, groupObject.PublicKey);
             groupObject.SelectedAction = null;
             groupObject.DeleteAction = null;
             groupObject.RenameAction = null;
@@ -981,7 +970,7 @@ namespace Toxy
             dialog.ResponseText = groupObject.Name;
             if (dialog.ShowDialog() == true && !string.IsNullOrEmpty(dialog.ResponseText))
             {
-                GroupChatHelpers.RenameGroup(config, groupObject.PublicKey, dialog.ResponseText);
+                GroupChatHelpers.RenameGroup(this.ViewModel.Configuraion, groupObject.PublicKey, dialog.ResponseText);
                 groupObject.Name = dialog.ResponseText;
             }
         }
@@ -1278,7 +1267,7 @@ namespace Toxy
 
         private void MetroWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (config.HideInTray)
+            if (this.ViewModel.Configuraion.HideInTray)
             {
                 e.Cancel = true;
                 this.ShowInTaskbar = false;
@@ -1331,13 +1320,13 @@ namespace Toxy
                 if (theme != null)
                     AppThemeComboBox.SelectedItem = AppThemeComboBox.Items.Cast<AppThemeMenuData>().Single(a => a.Name == style.Item1.Name);
 
-                if (InputDevicesComboBox.Items.Count - 1 >= config.InputDevice)
-                    InputDevicesComboBox.SelectedIndex = config.InputDevice;
+                if (InputDevicesComboBox.Items.Count - 1 >= this.ViewModel.Configuraion.InputDevice)
+                    InputDevicesComboBox.SelectedIndex = this.ViewModel.Configuraion.InputDevice;
 
-                if (OutputDevicesComboBox.Items.Count - 1 >= config.OutputDevice)
-                    OutputDevicesComboBox.SelectedIndex = config.OutputDevice;
+                if (OutputDevicesComboBox.Items.Count - 1 >= this.ViewModel.Configuraion.OutputDevice)
+                    OutputDevicesComboBox.SelectedIndex = this.ViewModel.Configuraion.OutputDevice;
 
-                HideInTrayCheckBox.IsChecked = config.HideInTray;
+                HideInTrayCheckBox.IsChecked = this.ViewModel.Configuraion.HideInTray;
             }
 
             SettingsFlyout.IsOpen = !SettingsFlyout.IsOpen;
@@ -1356,7 +1345,7 @@ namespace Toxy
             {
                 try
                 {
-                    string id = DnsTools.DiscoverToxID(friendID, config.NameServices);
+                    string id = DnsTools.DiscoverToxID(friendID, this.ViewModel.Configuraion.NameServices);
 
                     if (string.IsNullOrEmpty(id))
                         throw new Exception("The server returned an empty result");
@@ -1413,7 +1402,7 @@ namespace Toxy
             this.ViewModel.MainToxyUser.Name = SettingsUsername.Text;
             this.ViewModel.MainToxyUser.StatusMessage = SettingsStatus.Text;
 
-            config.HideInTray = HideInTrayCheckBox.IsChecked ?? false;
+            this.ViewModel.Configuraion.HideInTray = HideInTrayCheckBox.IsChecked ?? false;
 
             SettingsFlyout.IsOpen = false;
 
@@ -1424,7 +1413,7 @@ namespace Toxy
                 var accent = ThemeManager.GetAccent(accentName);
                 ThemeManager.ChangeAppStyle(System.Windows.Application.Current, accent, theme.Item1);
 
-                config.AccentColor = accentName;
+                this.ViewModel.Configuraion.AccentColor = accentName;
             }
 
             if (AppThemeComboBox.SelectedItem != null)
@@ -1434,20 +1423,20 @@ namespace Toxy
                 var appTheme = ThemeManager.GetAppTheme(themeName);
                 ThemeManager.ChangeAppStyle(System.Windows.Application.Current, theme.Item2, appTheme);
 
-                config.Theme = themeName;
+                this.ViewModel.Configuraion.Theme = themeName;
             }
 
             int index = InputDevicesComboBox.SelectedIndex + 1;
             if (index != 0 && WaveIn.DeviceCount > 0 && WaveIn.DeviceCount >= index)
-                config.InputDevice = index - 1;
+                this.ViewModel.Configuraion.InputDevice = index - 1;
 
             index = OutputDevicesComboBox.SelectedIndex + 1;
             if (index != 0 && WaveOut.DeviceCount > 0 && WaveOut.DeviceCount >= index)
-                config.OutputDevice = index - 1;
+                this.ViewModel.Configuraion.OutputDevice = index - 1;
 
             ExecuteActionsOnNotifyIcon();
 
-            ConfigTools.Save(config, "config.xml");
+            this.ViewModel.SaveConfiguraion();
             tox.Save(toxDataFilename);
         }
 
@@ -1764,7 +1753,7 @@ namespace Toxy
 
         private void ExecuteActionsOnNotifyIcon()
         {
-            nIcon.Visible = config.HideInTray;
+            nIcon.Visible = this.ViewModel.Configuraion.HideInTray;
         }
 
         private void mv_Activated(object sender, EventArgs e)
@@ -1778,8 +1767,6 @@ namespace Toxy
             var theme = ThemeManager.DetectAppStyle(System.Windows.Application.Current);
             var accent = ThemeManager.GetAccent(((AccentColorMenuData)AccentComboBox.SelectedItem).Name);
             ThemeManager.ChangeAppStyle(System.Windows.Application.Current, accent, theme.Item1);
-
-
         }
 
         private void SettingsFlyout_IsOpenChanged(object sender, EventArgs e)

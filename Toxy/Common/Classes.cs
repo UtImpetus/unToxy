@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading;
 using Toxy.Views;
 
@@ -6,11 +7,17 @@ namespace Toxy.Common
 {
     public class MessageData
     {
+        public MessageData()
+        {
+            TimeStamp = default(DateTime);
+        }
+
         public string Username { get; set; }
         public string Message { get; set; }
         public int Id { get; set; }
         public bool IsAction { get; set; }
         public bool IsSelf { get; set; }
+        public DateTime TimeStamp { get; set; }
     }
 
     public class FileTransfer

@@ -452,7 +452,7 @@
                              Text=""
                              VerticalAlignment="Top"
                              Width="275"
-                             Margin="15,41,0,0" />
+                             Margin="15,41,0,0" />                    
                     <Label Content="Enter your desired status message"
                            HorizontalAlignment="Left"
                            VerticalAlignment="Top"
@@ -510,8 +510,15 @@
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
                               Width="275" />
-                    <CheckBox x:Name="HideInTrayCheckBox"
+                    <CheckBox x:Name="PreloadImagesCheckBox"
                               Margin="15,430,0,0"
+                              VerticalAlignment="Top"
+                              HorizontalAlignment="Left"
+                              IsChecked="{Binding Configuraion.InlineImages, Mode=TwoWay}"
+                              Content="Show inline images"
+                              />
+                    <CheckBox x:Name="HideInTrayCheckBox"
+                              Margin="15,460,0,0"
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
                               Content="Hide in tray"
@@ -523,7 +530,7 @@
                             HorizontalAlignment="Right"
                             Width="75"
                             Click="SaveSettingsButton_OnClick" />
-                    
+
                     <Button x:Name="CopyIDButton"
                             Content="Copy ID"
                             HorizontalAlignment="Left"

@@ -12,6 +12,7 @@ using Toxy.Views;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using Toxy.Utils;
+using Toxy.ViewModels;
 
 namespace Toxy.Common
 {
@@ -20,6 +21,7 @@ namespace Toxy.Common
         public static void AddNewMessageRow(this FlowDocument document, Tox tox, MessageData data, bool sameUser)
         {
             document.IsEnabled = true;
+            var context = document.DataContext is MainWindowViewModel ? document.DataContext as MainWindowViewModel : null;
 
             //Make a new row
             TableRow newTableRow = new TableRow();
@@ -49,19 +51,16 @@ namespace Toxy.Common
 
             if (data.IsSelf)
                 messageParagraph.Foreground = new SolidColorBrush(Color.FromRgb(164, 164, 164));
-            AddPreview(messageTableCell, data);
+            if (context != null && context.Configuraion.InlineImages)
+            {
+                AddPreview(messageTableCell, data);
+            }
             ProcessMessage(data, messageParagraph, false);
 
             //messageParagraph.Inlines.Add(fakeHyperlink);
             messageTableCell.Blocks.Add(messageParagraph);
-           
-
-            TableCell timestampTableCell = new TableCell();
-            Paragraph timestamParagraph = new Paragraph();
-            timestampTableCell.TextAlignment = TextAlignment.Right;
-            timestamParagraph.Inlines.Add(DateTime.Now.ToShortTimeString());
-            timestampTableCell.Blocks.Add(timestamParagraph);
-            timestamParagraph.Foreground = new SolidColorBrush(Color.FromRgb(164, 164, 164));
+            
+            TableCell timestampTableCell = AddTimeStamp(data);
             //Add the two cells to the row we made before
             newTableRow.Cells.Add(usernameTableCell);
             newTableRow.Cells.Add(messageTableCell);
@@ -70,6 +69,31 @@ namespace Toxy.Common
             //Adds row to the Table > TableRowGroup
             TableRowGroup MessageRows = (TableRowGroup)document.FindName("MessageRows");
             MessageRows.Rows.Add(newTableRow);
+        }
+
+        private static TableCell AddTimeStamp(MessageData data)
+        {
+            TableCell timestampTableCell = new TableCell();
+            Paragraph timestamParagraph = new Paragraph();
+            timestampTableCell.TextAlignment = TextAlignment.Right;
+            if (data.TimeStamp != default(DateTime))
+            {
+                if (data.TimeStamp.Date != DateTime.Now.Date)
+                {
+                    timestamParagraph.Inlines.Add(data.TimeStamp.ToString());
+                }
+                else
+                {
+                    timestamParagraph.Inlines.Add(data.TimeStamp.ToShortTimeString());
+                }
+            }
+            else
+            {
+                timestamParagraph.Inlines.Add(DateTime.Now.ToShortTimeString());
+            }
+            timestampTableCell.Blocks.Add(timestamParagraph);
+            timestamParagraph.Foreground = new SolidColorBrush(Color.FromRgb(164, 164, 164));
+            return timestampTableCell;
         }
 
         private static void AddPreview(TableCell messageTableCell, MessageData data)

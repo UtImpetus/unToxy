@@ -17,6 +17,7 @@ namespace Toxy.Utils
         static Object sync = new object();
         static string dbFileName = "base.sqlite";
         static SqliteConnection db = null;
+        static Dictionary<string, DateTime> lastHistoryMessageTimeForPublicKey = new Dictionary<string, DateTime>();
 
         public static void InitLogDatabase()
         {
@@ -62,13 +63,13 @@ namespace Toxy.Utils
 
         internal static void FillRecentHistory(Tox tox, System.Windows.Documents.FlowDocument flowDocument, string publicKey)
         {
-            if (flowDocument.Tag is string) return;
+            if (lastHistoryMessageTimeForPublicKey.Any(v=>v.Key==publicKey)) return;
             lock (sync)
             {
                 try
                 {
                     IDbCommand cmd = db.CreateCommand();
-                    cmd.CommandText = "SELECT * FROM ChatLog WHERE PublicKey = @PublicKey ORDER BY TimeStamp DESC LIMIT 20";
+                    cmd.CommandText = "SELECT * FROM ChatLog WHERE PublicKey = @PublicKey ORDER BY TimeStamp DESC LIMIT 200";
                     cmd.Parameters.Add(new SqliteParameter { ParameterName = "@PublicKey", Value = publicKey });
                     IDataReader reader = cmd.ExecuteReader();
                     var logItems = new List<ChatLogItem>();
@@ -78,14 +79,19 @@ namespace Toxy.Utils
                         logitem.From = reader.GetString(reader.GetOrdinal("FromUser"));
                         logitem.PublicKey = reader.GetString(reader.GetOrdinal("PublicKey"));
                         logitem.Message = reader.GetString(reader.GetOrdinal("Message"));
+                        logitem.TimeStamp = reader.GetDateTime(reader.GetOrdinal("TimeStamp"));
                         logItems.Insert(0,logitem);
                     }
-                                        
+                    
                     foreach (var item in logItems)
                     {
-                        flowDocument.AddNewMessageRow(tox, new MessageData() { Username = item.From, IsAction = false, IsSelf = false, Message = item.Message }, false);
+                        flowDocument.AddNewMessageRow(tox, new MessageData() { Username = item.From, IsAction = false, IsSelf = false, Message = item.Message ,TimeStamp=item.TimeStamp}, false);
                     }
-                    flowDocument.Tag = "histoy updated";
+                    var lastItem =logItems.LastOrDefault();
+                    if(lastItem!=null)
+                    {
+                        lastHistoryMessageTimeForPublicKey.Add(publicKey, lastItem.TimeStamp);
+                    }
                 }
                 catch (Exception e)
                 {
