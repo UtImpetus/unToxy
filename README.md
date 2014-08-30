@@ -19,7 +19,8 @@ Feel free to contribute.
   - One to one conversations
   - Friendrequest listing
 * Group chats
-* Voice chats
+* Audio calls
+* Video calls
 * File transfers
 * Typing detection
 * DNS discovery (tox1 and tox3)
@@ -36,11 +37,13 @@ Pre-compiled versions of unToxy can be found [here](http://1drv.ms/1pkwaFp "unTo
 Things you'll need to compile
 ===
 
-* The [SharpTox library](https://github.com/Impyy/SharpTox "SharpTox GitHub repo") and its dependencies. Once you have obtained those, place libtox.dll and SharpTox.dll in the libs folder.
+* The [SharpTox library](https://github.com/Impyy/SharpTox "SharpTox GitHub repo") and its dependencies. 
+* The [SharpTox.Vpx library](https://github.com/Impyy/SharpTox.Vpx)
+* Once you have obtained those, place libtox.dll, SharpTox.dll and SharpTox.Vpx.dll in the libs folder.
 
 All other dependencies can be found in the packages.config file and should be downloaded by Visual Studio automatically
 
 ===
 ### Special Thanks
 
-* Punker
+* punker76

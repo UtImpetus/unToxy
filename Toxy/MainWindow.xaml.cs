@@ -112,6 +112,7 @@ namespace Toxy
             toxav.OnReject += toxav_OnEnd;
             toxav.OnCancel += toxav_OnEnd;
             toxav.OnReceivedAudio += toxav_OnReceivedAudio;
+            toxav.OnReceivedVideo += toxav_OnReceivedVideo;
             toxav.OnMediaChange += toxav_OnMediaChange;
 
             bool bootstrap_success = false;
@@ -215,12 +216,7 @@ namespace Toxy
 
         private void toxav_OnMediaChange(int call_index, IntPtr args)
         {
-            if (call == null)
-                return;
-
-            //can't change the call type, we don't support video calls
-            if (call.CallIndex == call_index)
-                EndCall();
+            //TODO: change the call type accordingly
         }
 
         private void InitializeNotifyIcon()
@@ -288,6 +284,14 @@ namespace Toxy
             call.ProcessAudioFrame(frame, frame_size);
         }
 
+        private void toxav_OnReceivedVideo(IntPtr toxav, int call_index, IntPtr frame, IntPtr userdata)
+        {
+            if (call == null)
+                return;
+
+            call.ProcessVideoFrame(frame);
+        }
+
         public MainWindowViewModel ViewModel
         {
             get { return this.DataContext as MainWindowViewModel; }
@@ -328,13 +332,13 @@ namespace Toxy
 
             int friendnumber = toxav.GetPeerID(call_index, 0);
 
-            ToxAvCodecSettings settings = toxav.GetPeerCodecSettings(call_index, 0);
+            /*ToxAvCodecSettings settings = toxav.GetPeerCodecSettings(call_index, 0);
             if (settings.CallType == ToxAvCallType.Video)
             {
                 //we don't support video calls, just reject this and return.
                 toxav.Reject(call_index, "Toxy does not support video calls.");
                 return;
-            }
+            }*/
 
             var friend = this.ViewModel.GetFriendObjectByNumber(friendnumber);
             if (friend != null)
@@ -684,7 +688,6 @@ namespace Toxy
 
             if (status == 0)
             {
-
                 DateTime lastOnline = tox.GetLastOnline(friendnumber);
                 if (lastOnline == emptyLastOnline)
                 {
@@ -850,9 +853,9 @@ namespace Toxy
             {
                 return doc.FindChildren<TableRow>().LastOrDefault(t => t.Tag.GetType() != typeof(FileTransfer));
             }
-            catch (Exception e)
+            catch(Exception ex)
             {
-                Logger.LogException(e);
+                Logger.LogException(ex);
                 return null;
             }
         }
@@ -893,13 +896,6 @@ namespace Toxy
             }
         }
 
-        private ToxNode[] nodes = new ToxNode[] 
-        { 
-            new ToxNode("192.254.75.98", 33445, new ToxKey(ToxKeyType.Public, "951C88B7E75C867418ACDB5D273821372BB5BD652740BCDF623A4FA293E75D2F")),
-            new ToxNode("144.76.60.215", 33445, new ToxKey(ToxKeyType.Public, "04119E835DF3E78BACF0F84235B300546AF8B936F035185E2A8E9E0A67C8924F")),
-            new ToxNode("23.226.230.47", 33445, new ToxKey(ToxKeyType.Public, "A09162D68618E742FFBCA1C2C70385E6679604B2D80EA6E84AD0996A1AC8A074")) 
-        };
-
         private void InitFriends()
         {
             //Creates a new FriendControl for every friend
@@ -916,7 +912,7 @@ namespace Toxy
             var groupMV = new GroupControlModelView();
             groupMV.ChatNumber = groupnumber;
             groupMV.Name = groupname;
-            groupMV.StatusMessage = string.Format("Peers online: {0}", tox.GetGroupMemberCount(groupnumber));//string.Join(", ", tox.GetGroupNames(groupnumber));
+            groupMV.StatusMessage = string.Format("Peers online: {0}", tox.GetGroupMemberCount(groupnumber));
             groupMV.SelectedAction = GroupSelectedAction;
             groupMV.DeleteAction = GroupDeleteAction;
             groupMV.RenameAction = GroupRenameAction;
@@ -1092,8 +1088,11 @@ namespace Toxy
             if (call != null)
                 return;
 
-            call = new ToxCall(tox, toxav, friendObject.CallIndex, friendObject.ChatNumber);
-            call.Answer();
+            ToxAvCodecSettings settings = ToxAv.DefaultCodecSettings;
+            settings.CallType = ToxAvCallType.Video;
+
+            call = new ToxCall(tox, toxav, friendObject.CallIndex, friendObject.ChatNumber, toxav.GetPeerCodecSettings(friendObject.CallIndex, 0).CallType == ToxAvCallType.Video ? true : false);
+            call.Answer(settings);
         }
 
         private void FriendDenyCallAction(IFriendObject friendObject)
@@ -1426,6 +1425,15 @@ namespace Toxy
                 this.ViewModel.Configuraion.Theme = themeName;
             }
 
+            if (call != null)
+            {
+                if (InputDevicesComboBox.SelectedIndex != this.ViewModel.Configuraion.InputDevice)
+                    call.SwitchInputDevice(InputDevicesComboBox.SelectedIndex);
+
+                if (OutputDevicesComboBox.SelectedIndex != this.ViewModel.Configuraion.OutputDevice)
+                    call.SwitchOutputDevice(OutputDevicesComboBox.SelectedIndex);
+            }
+
             int index = InputDevicesComboBox.SelectedIndex + 1;
             if (index != 0 && WaveIn.DeviceCount > 0 && WaveIn.DeviceCount >= index)
                 this.ViewModel.Configuraion.InputDevice = index - 1;
@@ -1563,7 +1571,7 @@ namespace Toxy
 
         private void GithubButton_Click(object sender, RoutedEventArgs e)
         {
-            Process.Start("https://github.com/DmitryStrunevsky/Toxy");
+            Process.Start("https://github.com/UtImpetus/unToxy");
         }
 
         private void TextToSend_TextChanged(object sender, TextChangedEventArgs e)
@@ -1680,13 +1688,16 @@ namespace Toxy
             if (tox.GetFriendConnectionStatus(selectedChatNumber) != 1)
                 return;
 
+            ToxAvCodecSettings settings = ToxAv.DefaultCodecSettings;
+            settings.CallType = ToxAvCallType.Video;
+
             int call_index;
-            ToxAvError error = toxav.Call(selectedChatNumber, ToxAv.DefaultCodecSettings, 30, out call_index);
+            ToxAvError error = toxav.Call(selectedChatNumber, settings, 30, out call_index);
             if (error != ToxAvError.None)
                 return;
 
             int friendnumber = toxav.GetPeerID(call_index, 0);
-            call = new ToxCall(tox, toxav, call_index, friendnumber);
+            call = new ToxCall(tox, toxav, call_index, friendnumber, true);
 
             CallButton.Visibility = Visibility.Collapsed;
             HangupButton.Visibility = Visibility.Visible;
