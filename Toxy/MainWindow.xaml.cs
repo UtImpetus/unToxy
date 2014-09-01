@@ -59,14 +59,17 @@ namespace Toxy
 
         private DateTime emptyLastOnline = new DateTime(1970, 1, 1, 0, 0, 0);
         System.Windows.Forms.NotifyIcon nIcon = new System.Windows.Forms.NotifyIcon();
-        Stream newMessageIconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/unToxy;component/Resources/Icons/icon2.ico")).Stream;
-        Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/unToxy;component/Resources/Icons/icon.ico")).Stream;
+        Stream newMessageIconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Toxy;component/Resources/Icons/icon2.ico")).Stream;
+        Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Toxy;component/Resources/Icons/icon.ico")).Stream;
         private Icon notifyIcon;
         private Icon newMessageNotifyIcon;
+
+        public static MainWindow Current { get; set; }
 
         public MainWindow()
         {
             InitializeComponent();
+            Current = this;
 
             this.DataContext = new MainWindowViewModel();
             
@@ -221,8 +224,8 @@ namespace Toxy
 
         private void InitializeNotifyIcon()
         {
-            Stream newMessageIconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/unToxy;component/Resources/Icons/icon2.ico")).Stream;
-            Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/unToxy;component/Resources/Icons/icon.ico")).Stream;
+            Stream newMessageIconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Toxy;component/Resources/Icons/icon2.ico")).Stream;
+            Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Toxy;component/Resources/Icons/icon.ico")).Stream;
 
             notifyIcon = new Icon(iconStream);
             newMessageNotifyIcon = new Icon(newMessageIconStream);

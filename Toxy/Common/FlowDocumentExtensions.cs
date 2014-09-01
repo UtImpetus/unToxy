@@ -13,6 +13,7 @@ using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using Toxy.Utils;
 using Toxy.ViewModels;
+using System.Windows.Media.Animation;
 
 namespace Toxy.Common
 {
@@ -26,6 +27,8 @@ namespace Toxy.Common
             //Make a new row
             TableRow newTableRow = new TableRow();
             newTableRow.Tag = data;
+            newTableRow.Name = "row" + Guid.NewGuid().ToString("N");
+            document.RegisterName(newTableRow.Name, newTableRow);
 
             //Make a new cell and create a paragraph in it
             TableCell usernameTableCell = new TableCell();
@@ -39,7 +42,7 @@ namespace Toxy.Common
             if (data.Username != tox.GetSelfName())
                 usernameParagraph.SetResourceReference(Paragraph.ForegroundProperty, "AccentColorBrush");
 
-            if(!sameUser)
+            if (!sameUser)
                 usernameParagraph.Inlines.Add(data.Username);
 
             usernameTableCell.Blocks.Add(usernameParagraph);
@@ -59,16 +62,59 @@ namespace Toxy.Common
 
             //messageParagraph.Inlines.Add(fakeHyperlink);
             messageTableCell.Blocks.Add(messageParagraph);
-            
+
             TableCell timestampTableCell = AddTimeStamp(data);
             //Add the two cells to the row we made before
             newTableRow.Cells.Add(usernameTableCell);
             newTableRow.Cells.Add(messageTableCell);
             newTableRow.Cells.Add(timestampTableCell);
-            
+
             //Adds row to the Table > TableRowGroup
             TableRowGroup MessageRows = (TableRowGroup)document.FindName("MessageRows");
             MessageRows.Rows.Add(newTableRow);
+            SetAnimationForRow(document, newTableRow);
+        }
+
+        static SolidColorBrush animatedBrush;
+        static TableRow prevRow;
+        static ColorAnimation rowAnimation;
+        static Storyboard myWidthAnimatedButtonStoryboard;
+
+        private static void SetAnimationForRow(FlowDocument document, TableRow newTableRow)
+        {
+            if (animatedBrush == null)
+            {
+                animatedBrush = new SolidColorBrush();
+                animatedBrush.Color = Colors.White;               
+            }
+
+            if (document.FindName("animatedBrush") == null) document.RegisterName("animatedBrush", animatedBrush);
+
+            if (prevRow == null)
+            {
+                prevRow = newTableRow;
+                newTableRow.Background = animatedBrush;
+            }
+            else
+            {
+                prevRow.Background = newTableRow.Background;
+                newTableRow.Background = animatedBrush;                
+            }
+
+            if (rowAnimation == null)
+            {
+                rowAnimation = new ColorAnimation();
+                rowAnimation.From = Colors.Black;
+                rowAnimation.To = Colors.White;
+                rowAnimation.Duration = new Duration(TimeSpan.FromMilliseconds(3000));
+                Storyboard.SetTargetName(rowAnimation, "animatedBrush");
+                Storyboard.SetTargetProperty(rowAnimation, new PropertyPath(SolidColorBrush.ColorProperty));
+                myWidthAnimatedButtonStoryboard = new Storyboard();
+                myWidthAnimatedButtonStoryboard.Children.Add(rowAnimation);
+            }
+
+            myWidthAnimatedButtonStoryboard.Begin(newTableRow);
+            prevRow = newTableRow;
         }
 
         private static TableCell AddTimeStamp(MessageData data)
@@ -165,7 +211,7 @@ namespace Toxy.Common
                     messageParagraph.Inlines.Add(data.Message);
                 else
                     messageParagraph.Inlines.Add("\n" + data.Message);
-                
+
                 Inline inline = messageParagraph.Inlines.LastInline;
 
                 for (int i = indices.Count; i-- > 0; )
