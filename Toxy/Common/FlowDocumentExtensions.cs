@@ -14,12 +14,13 @@ using System.Windows.Media.Imaging;
 using Toxy.Utils;
 using Toxy.ViewModels;
 using System.Windows.Media.Animation;
+using System.Threading.Tasks;
 
 namespace Toxy.Common
 {
     static class FlowDocumentExtensions
     {
-        public static void AddNewMessageRow(this FlowDocument document, Tox tox, MessageData data, bool sameUser)
+        public static void AddNewMessageRow(this FlowDocument document, Tox tox, MessageData data, bool sameUser, bool isHistory = false)
         {
             document.IsEnabled = true;
             var context = document.DataContext is MainWindowViewModel ? document.DataContext as MainWindowViewModel : null;
@@ -36,7 +37,7 @@ namespace Toxy.Common
             usernameTableCell.Padding = new Thickness(10, 0, 0, 0);
 
             Paragraph usernameParagraph = new Paragraph();
-            usernameParagraph.TextAlignment = data.IsAction ? TextAlignment.Right : TextAlignment.Left;
+            usernameParagraph.TextAlignment = TextAlignment.Right;
             usernameParagraph.Foreground = new SolidColorBrush(Color.FromRgb(164, 164, 164));
 
             if (data.Username != tox.GetSelfName())
@@ -51,12 +52,13 @@ namespace Toxy.Common
             TableCell messageTableCell = new TableCell();
             Paragraph messageParagraph = new Paragraph();
             messageParagraph.TextAlignment = TextAlignment.Left;
+            messageParagraph.Padding = new Thickness(10, 0, 10, 10);
 
             if (data.IsSelf)
                 messageParagraph.Foreground = new SolidColorBrush(Color.FromRgb(164, 164, 164));
             if (context != null && context.Configuraion.InlineImages)
             {
-                AddPreview(messageTableCell, data);
+                AddPreview(messageTableCell, data.Message.Trim());
             }
             ProcessMessage(data, messageParagraph, false);
 
@@ -71,8 +73,15 @@ namespace Toxy.Common
 
             //Adds row to the Table > TableRowGroup
             TableRowGroup MessageRows = (TableRowGroup)document.FindName("MessageRows");
-            MessageRows.Rows.Add(newTableRow);
-            SetAnimationForRow(document, newTableRow);
+            if (isHistory)
+            {
+                MessageRows.Rows.Insert(0, newTableRow);
+            }
+            else
+            {
+                MessageRows.Rows.Add(newTableRow);
+                SetAnimationForRow(document, newTableRow);
+            }
         }
 
         static SolidColorBrush animatedBrush;
@@ -85,7 +94,7 @@ namespace Toxy.Common
             if (animatedBrush == null)
             {
                 animatedBrush = new SolidColorBrush();
-                animatedBrush.Color = Colors.White;               
+                animatedBrush.Color = Colors.White;
             }
 
             if (document.FindName("animatedBrush") == null) document.RegisterName("animatedBrush", animatedBrush);
@@ -98,7 +107,7 @@ namespace Toxy.Common
             else
             {
                 prevRow.Background = newTableRow.Background;
-                newTableRow.Background = animatedBrush;                
+                newTableRow.Background = animatedBrush;
             }
 
             if (rowAnimation == null)
@@ -121,12 +130,23 @@ namespace Toxy.Common
         {
             TableCell timestampTableCell = new TableCell();
             Paragraph timestamParagraph = new Paragraph();
-            timestampTableCell.TextAlignment = TextAlignment.Right;
+            timestampTableCell.TextAlignment = TextAlignment.Left;
             if (data.TimeStamp != default(DateTime))
             {
                 if (data.TimeStamp.Date != DateTime.Now.Date)
                 {
-                    timestamParagraph.Inlines.Add(data.TimeStamp.ToString());
+                    if (data.TimeStamp.Date.Year != DateTime.Now.Date.Year)
+                    {
+                        timestamParagraph.Inlines.Add(data.TimeStamp.ToString("yyyy.MM.dd HH:mm:ss"));
+                    }
+                    else if (data.TimeStamp.Date.Month != DateTime.Now.Date.Month)
+                    {
+                        timestamParagraph.Inlines.Add(data.TimeStamp.ToString("MMM dd HH:mm:ss"));
+                    }
+                    else if (data.TimeStamp.Date.Day != DateTime.Now.Date.Day)
+                    {
+                        timestamParagraph.Inlines.Add(data.TimeStamp.ToString("MMM dd HH:mm:ss"));
+                    }
                 }
                 else
                 {
@@ -142,20 +162,41 @@ namespace Toxy.Common
             return timestampTableCell;
         }
 
-        private static void AddPreview(TableCell messageTableCell, MessageData data)
+        private static void AddPreview(TableCell messageTableCell, string message)
         {
-            if (HttpHelpers.IsImageUrl(data.Message))
+            var task = new Task(() =>
             {
-                var previewButton = new Paragraph();
-                Image image = new Image();
-                BitmapImage bitmapImage = new BitmapImage();
-                bitmapImage.BeginInit();
-                bitmapImage.UriSource = new Uri(data.Message);
-                bitmapImage.EndInit();
-                image.Source = bitmapImage;
-                previewButton.Inlines.Add(image);
-                messageTableCell.Blocks.Add(previewButton);
-            }
+                try
+                {
+                    if (HttpHelpers.IsImageUrl(message))
+                    {                        
+                        MainWindow.Current.Dispatcher.Invoke(() =>
+                        {
+                            var previewButton = new Paragraph();
+                            Image image = new Image();
+                            BitmapImage bitmapImage = new BitmapImage();
+                            bitmapImage.BeginInit();
+                            bitmapImage.UriSource = new Uri(message);
+                            bitmapImage.EndInit();
+                            image.Source = bitmapImage;
+                            image.SizeChanged += image_SizeChanged;
+                            previewButton.Inlines.Add(image);
+                            messageTableCell.Blocks.Add(previewButton);
+                            
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogException(ex);
+                }
+            });
+            task.Start();
+        }
+
+        static void image_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            MainWindow.Current.ScrollChatBox(((Image)sender).ActualHeight);
         }
 
         public static FileTransfer AddNewFileTransfer(this FlowDocument doc, Tox tox, int friendnumber, int filenumber, string filename, ulong filesize, bool is_sender)

@@ -147,6 +147,7 @@
     <Compile Include="Common\ChatLogItem.cs" />
     <Compile Include="Common\Config\Config.cs" />
     <Compile Include="Common\Config\ConfigTools.cs" />
+    <Compile Include="Common\Constants.cs" />
     <Compile Include="Common\ListBoxScrollViewerAttachedBehavior.cs" />
     <Compile Include="Common\Logger.cs" />
     <Compile Include="Common\StringExtensions.cs" />
@@ -161,6 +162,7 @@
     <Compile Include="Utils\GroupChatHelpers.cs" />
     <Compile Include="Utils\HttpHelpers.cs" />
     <Compile Include="ToxHelpers\GdiWrapper.cs" />
+    <Compile Include="Utils\UIHelpers.cs" />
     <Compile Include="VideoWindow.xaml.cs">
       <DependentUpon>VideoWindow.xaml</DependentUpon>
     </Compile>

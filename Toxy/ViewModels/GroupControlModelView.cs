@@ -2,6 +2,11 @@
 using System.Windows.Input;
 using SharpTox.Core;
 using Toxy.MVVM;
+using System.Windows.Documents;
+using System.IO;
+using System.Windows.Markup;
+using System.Reflection;
+using Toxy.Utils;
 
 namespace Toxy.ViewModels
 {
@@ -10,6 +15,11 @@ namespace Toxy.ViewModels
         public Action<IGroupObject, bool> SelectedAction { get; set; }
         public Action<IGroupObject> DeleteAction { get; set; }
         public Action<IGroupObject> RenameAction { get; set; }
+
+        public GroupControlModelView()
+        {
+            Document = UIHelpers.GetNewFlowDocument();
+        }
 
         private ICommand deleteCommand;
 
@@ -156,5 +166,15 @@ namespace Toxy.ViewModels
 
 
         public string PublicKey { get; set; }
+
+        private FlowDocument document = new FlowDocument();
+
+        public FlowDocument Document
+        {
+            get { return document; }
+            set { document = value; }
+        }
+
+        
     }
 }

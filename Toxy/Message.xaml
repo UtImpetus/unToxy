@@ -7,14 +7,23 @@
                PagePadding="0"
                FontSize="10pt"
                FontFamily="Segoe UI">
+    <Table Padding="20,0,10,0"
+           Margin="0">
+        <Table.Columns>
+            <TableColumn />
+        </Table.Columns>
+        <TableRowGroup Name="CustomCommandsRows">
+
+        </TableRowGroup>
+    </Table>
     <Table Padding="0,0,10,0"
            Margin="0">
         <Table.Columns>
             <TableColumn Width="100" />
             <TableColumn />
-            <TableColumn Width="75" />
+            <TableColumn Width="150" />
         </Table.Columns>
-
+        
         <TableRowGroup Name="MessageRows">
 
         </TableRowGroup>

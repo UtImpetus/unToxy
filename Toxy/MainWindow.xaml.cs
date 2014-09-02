@@ -43,7 +43,6 @@ namespace Toxy
         private ToxCall call;
 
         private Dictionary<int, FlowDocument> convdic = new Dictionary<int, FlowDocument>();
-        private Dictionary<int, FlowDocument> groupdic = new Dictionary<int, FlowDocument>();
         private List<FileTransfer> transfers = new List<FileTransfer>();
         private List<string> keysOfConnectedGroupChats = new List<string>();
 
@@ -72,7 +71,7 @@ namespace Toxy
             Current = this;
 
             this.DataContext = new MainWindowViewModel();
-            
+
             ToxOptions options;
             if (this.ViewModel.Configuraion.ProxyEnabled)
                 options = new ToxOptions(this.ViewModel.Configuraion.Ipv6Enabled, this.ViewModel.Configuraion.ProxyAddress, this.ViewModel.Configuraion.ProxyPort);
@@ -209,7 +208,7 @@ namespace Toxy
             if (!convdic.ContainsKey(friendnumber))
                 return;
 
-            Paragraph para = (Paragraph)convdic[friendnumber].FindChildren<TableRow>().Where(r => r.Tag.GetType() != typeof(FileTransfer) && ((MessageData)(r.Tag)).Id == receipt).First().FindChildren<TableCell>().ToArray()[1].Blocks.FirstBlock;
+            Paragraph para = (Paragraph)convdic[friendnumber].FindChildren<TableRow>().Where(r => r.Tag !=null &&  r.Tag.GetType() != typeof(FileTransfer) &&((MessageData)(r.Tag)).Id == receipt).First().FindChildren<TableCell>().ToArray()[1].Blocks.FirstBlock;
 
             if (para == null)
                 return; //row or cell doesn't exist? odd, just return
@@ -372,20 +371,10 @@ namespace Toxy
         {
             MessageData data = new MessageData() { Username = "*  ", Message = string.Format("{0} {1}", tox.GetGroupMemberName(groupnumber, friendgroupnumber), action), IsAction = true };
 
-            if (groupdic.ContainsKey(groupnumber))
-            {
-                groupdic[groupnumber].AddNewMessageRow(tox, data, false);
-            }
-            else
-            {
-                FlowDocument document = GetNewFlowDocument();
-                groupdic.Add(groupnumber, document);
-                groupdic[groupnumber].AddNewMessageRow(tox, data, false);
-            }
-
             var group = this.ViewModel.GetGroupObjectByNumber(groupnumber);
             if (group != null)
             {
+                group.Document.AddNewMessageRow(tox, data, false);
                 if (!group.Selected)
                 {
                     group.HasNewMessage = true;
@@ -404,30 +393,28 @@ namespace Toxy
         {
             MessageData data = new MessageData() { Username = tox.GetGroupMemberName(groupnumber, friendgroupnumber), Message = message };
 
-            if (groupdic.ContainsKey(groupnumber))
+            var group = this.ViewModel.GetGroupObjectByNumber(groupnumber);
+            if (group != null)
             {
-                var run = GetLastMessageRun(groupdic[groupnumber]);
+                var run = GetLastMessageRun(group.Document);
 
                 if (run != null)
                 {
                     if (((MessageData)run.Tag).Username == data.Username)
-                        groupdic[groupnumber].AddNewMessageRow(tox, data, true);
+                        group.Document.AddNewMessageRow(tox, data, true);
                     else
-                        groupdic[groupnumber].AddNewMessageRow(tox, data, false);
+                        group.Document.AddNewMessageRow(tox, data, false);
                 }
                 else
                 {
-                    groupdic[groupnumber].AddNewMessageRow(tox, data, false);
+                    group.Document.AddNewMessageRow(tox, data, false);
                 }
             }
             else
             {
-                FlowDocument document = GetNewFlowDocument();
-                groupdic.Add(groupnumber, document);
-                groupdic[groupnumber].AddNewMessageRow(tox, data, false);
+                AddGroupToView(groupnumber).Document.AddNewMessageRow(tox, data, false);
             }
 
-            var group = this.ViewModel.GetGroupObjectByNumber(groupnumber);
             if (group != null)
             {
                 if (!group.Selected)
@@ -445,6 +432,7 @@ namespace Toxy
 
             this.nIcon.Icon = newMessageNotifyIcon;
             this.ViewModel.HasNewMessage = true;
+            ChatHistoryHelper.AddLineToHistory(group.PublicKey, data.Username, data.Message);
         }
 
         private void tox_OnGroupInvite(int groupnumber, string group_public_key)
@@ -622,7 +610,7 @@ namespace Toxy
         private void tox_OnFileSendRequest(int friendnumber, int filenumber, ulong filesize, string filename)
         {
             if (!convdic.ContainsKey(friendnumber))
-                convdic.Add(friendnumber, GetNewFlowDocument());
+                convdic.Add(friendnumber, UIHelpers.GetNewFlowDocument());
 
             FileTransfer transfer = convdic[friendnumber].AddNewFileTransfer(tox, friendnumber, filenumber, filename, filesize, false);
 
@@ -742,7 +730,7 @@ namespace Toxy
             }
             else
             {
-                FlowDocument document = GetNewFlowDocument();
+                FlowDocument document = UIHelpers.GetNewFlowDocument();
                 convdic.Add(friendnumber, document);
                 convdic[friendnumber].AddNewMessageRow(tox, data, false);
             }
@@ -765,15 +753,6 @@ namespace Toxy
 
             this.nIcon.Icon = newMessageNotifyIcon;
             this.ViewModel.HasNewMessage = true;
-        }
-
-        private FlowDocument GetNewFlowDocument()
-        {
-            Stream doc_stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Toxy.Message.xaml");
-            FlowDocument doc = (FlowDocument)XamlReader.Load(doc_stream);
-            doc.IsEnabled = true;
-
-            return doc;
         }
 
         private void tox_OnFriendMessage(int friendnumber, string message)
@@ -799,7 +778,7 @@ namespace Toxy
             }
             else
             {
-                FlowDocument document = GetNewFlowDocument();
+                FlowDocument document = UIHelpers.GetNewFlowDocument();
                 convdic.Add(friendnumber, document);
                 convdic[friendnumber].AddNewMessageRow(tox, data, false);
             }
@@ -825,13 +804,21 @@ namespace Toxy
             ChatHistoryHelper.AddLineToHistory(tox.GetClientID(friendnumber).GetString(), friendName, message);
         }
 
-        private void ScrollChatBox()
+        internal void ScrollChatBox()
         {
             ScrollViewer viewer = FindScrollViewer(ChatBox);
 
             if (viewer != null)
-                if (viewer.ScrollableHeight == viewer.VerticalOffset)
+                if (viewer.ScrollableHeight >= viewer.VerticalOffset)
                     viewer.ScrollToBottom();
+        }
+
+        internal void ScrollChatBox(double delta)
+        {
+            ScrollViewer viewer = FindScrollViewer(ChatBox);
+
+            if (viewer != null)
+                    viewer.ScrollToVerticalOffset(viewer.VerticalOffset + delta);
         }
 
         private static ScrollViewer FindScrollViewer(FlowDocumentScrollViewer viewer)
@@ -856,7 +843,7 @@ namespace Toxy
             {
                 return doc.FindChildren<TableRow>().LastOrDefault(t => t.Tag.GetType() != typeof(FileTransfer));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.LogException(ex);
                 return null;
@@ -908,7 +895,7 @@ namespace Toxy
             }
         }
 
-        private void AddGroupToView(int groupnumber)
+        private GroupControlModelView AddGroupToView(int groupnumber)
         {
             string groupname = string.Format("Groupchat #{0}", groupnumber);
 
@@ -920,6 +907,7 @@ namespace Toxy
             groupMV.DeleteAction = GroupDeleteAction;
             groupMV.RenameAction = GroupRenameAction;
             this.ViewModel.ChatCollection.Add(groupMV);
+            return groupMV;
         }
 
         private void UpdateGroupToOnlineStatus(GroupChat groupChat)
@@ -949,13 +937,7 @@ namespace Toxy
         {
             this.ViewModel.ChatCollection.Remove(groupObject);
             int groupNumber = groupObject.ChatNumber;
-            if (groupdic.ContainsKey(groupNumber))
-            {
-                groupdic.Remove(groupNumber);
-
-                if (groupObject.Selected)
-                    ChatBox.Document = null;
-            }
+            if (groupObject.Selected) ChatBox.Document = null;
             tox.DeleteGroupChat(groupNumber);
             GroupChatHelpers.RemoveGroupFromConfig(this.ViewModel.Configuraion, groupObject.PublicKey);
             groupObject.SelectedAction = null;
@@ -1119,7 +1101,7 @@ namespace Toxy
             friendMV.Name = id;
             friendMV.ToxStatus = ToxUserStatus.Invalid;
             friendMV.RequestMessageData = new MessageData() { Message = message, Username = "Request Message" };
-            friendMV.RequestFlowDocument = GetNewFlowDocument();
+            friendMV.RequestFlowDocument = UIHelpers.GetNewFlowDocument();
             friendMV.SelectedAction = FriendRequestSelectedAction;
             friendMV.AcceptAction = FriendRequestAcceptAction;
             friendMV.DeclineAction = FriendRequestDeclineAction;
@@ -1164,7 +1146,7 @@ namespace Toxy
 
         private void SelectGroupControl(IGroupObject group)
         {
-            if (group == null || group.ChatNumber == -1)
+            if (group == null)
             {
                 group.Selected = false;
                 return;
@@ -1172,20 +1154,9 @@ namespace Toxy
 
             CallButton.Visibility = Visibility.Collapsed;
             FileButton.Visibility = Visibility.Collapsed;
-
             group.AdditionalInfo = string.Join(", ", tox.GetGroupNames(group.ChatNumber));
-
-            if (groupdic.ContainsKey(group.ChatNumber))
-            {
-                ChatBox.Document = groupdic[group.ChatNumber];
-            }
-            else
-            {
-                FlowDocument document = GetNewFlowDocument();
-                groupdic.Add(group.ChatNumber, document);
-                ChatBox.Document = groupdic[group.ChatNumber];
-            }
-            ChatHistoryHelper.FillRecentHistory(tox, ChatBox.Document, group.PublicKey);
+            ChatBox.Document = group.Document;
+            UIHelpers.PreloadHistory(tox,ChatBox,group.PublicKey);
         }
 
         private void EndCall()
@@ -1260,13 +1231,14 @@ namespace Toxy
             }
             else
             {
-                FlowDocument document = GetNewFlowDocument();
+                FlowDocument document = UIHelpers.GetNewFlowDocument();
                 convdic.Add(friend.ChatNumber, document);
                 ChatBox.Document = convdic[friend.ChatNumber];
             }
-            ChatHistoryHelper.FillRecentHistory(tox, ChatBox.Document, tox.GetClientID(friendNumber).GetString());
+            
+            UIHelpers.PreloadHistory(tox, ChatBox, friendNumber);           
         }
-
+        
         private void MetroWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             if (this.ViewModel.Configuraion.HideInTray)
@@ -1495,7 +1467,7 @@ namespace Toxy
                         }
                         else
                         {
-                            FlowDocument document = GetNewFlowDocument();
+                            FlowDocument document = UIHelpers.GetNewFlowDocument();
                             convdic.Add(selectedChatNumber, document);
                             convdic[selectedChatNumber].AddNewMessageRow(tox, data, false);
                         }
@@ -1542,7 +1514,7 @@ namespace Toxy
                             }
                             else
                             {
-                                FlowDocument document = GetNewFlowDocument();
+                                FlowDocument document = UIHelpers.GetNewFlowDocument();
                                 convdic.Add(selectedChatNumber, document);
                                 convdic[selectedChatNumber].AddNewMessageRow(tox, data, false);
                             }
