@@ -1,6 +1,10 @@
 ﻿using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
+using Toxy.Common;
+using Toxy.Utils;
 
 namespace Toxy.Views
 {
@@ -13,6 +17,7 @@ namespace Toxy.Views
         private int friendnumber;
         private string filename;
         private ulong filesize;
+        private TableCell fileTableCell;
 
         public delegate void OnAcceptDelegate(int friendnumber, int filenumber);
         public event OnAcceptDelegate OnAccept;
@@ -26,12 +31,15 @@ namespace Toxy.Views
         public delegate void OnFolderOpenDelegate();
         public event OnFolderOpenDelegate OnFolderOpen;
 
-        public FileTransferControl(string friendname, int friendnumber, int filenumber, string filename, ulong filesize)
+        public string FilePath { get; set; }
+
+        public FileTransferControl(string friendname, int friendnumber, int filenumber, string filename, ulong filesize, TableCell fileTableCell)
         {
             this.filenumber = filenumber;
             this.friendnumber = friendnumber;
             this.filesize = filesize;
             this.filename = filename;
+            this.fileTableCell = fileTableCell;
 
             InitializeComponent();
 
@@ -44,12 +52,21 @@ namespace Toxy.Views
             Dispatcher.BeginInvoke(((Action)(() => MessageLabel.Content = status)));
         }
 
-        public void TransferFinished()
+        public void TransferFinished(bool complete=true)
         {
             AcceptButton.Visibility = Visibility.Collapsed;
             DeclineButton.Visibility = Visibility.Collapsed;
-            FileOpenButton.Visibility = Visibility.Visible;
-            FolderOpenButton.Visibility = Visibility.Visible;
+            if (complete)
+            {                
+                FileOpenButton.Visibility = Visibility.Visible;
+                FolderOpenButton.Visibility = Visibility.Visible;
+                if (MainWindow.Current.ViewModel.Configuraion.IsAllowedFile(filename) && MainWindow.Current.ViewModel.Configuraion.InlineImages && File.Exists(FilePath))
+                {
+                    var uri = new System.Uri(FilePath);
+                    var converted = uri.AbsoluteUri;
+                    FlowDocumentExtensions.AddPreview(fileTableCell, converted.ToString());
+                }
+            }
         }
 
         public void SetProgress(int value)
@@ -73,7 +90,7 @@ namespace Toxy.Views
 
             MessageLabel.Content = "Canceled";
 
-            TransferFinished();
+            TransferFinished(false);
         }
 
         private void FileOpenButton_OnClick(object sender, RoutedEventArgs e)

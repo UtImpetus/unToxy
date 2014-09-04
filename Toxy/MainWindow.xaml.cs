@@ -208,7 +208,7 @@ namespace Toxy
             if (!convdic.ContainsKey(friendnumber))
                 return;
 
-            Paragraph para = (Paragraph)convdic[friendnumber].FindChildren<TableRow>().Where(r => r.Tag !=null &&  r.Tag.GetType() != typeof(FileTransfer) &&((MessageData)(r.Tag)).Id == receipt).First().FindChildren<TableCell>().ToArray()[1].Blocks.FirstBlock;
+            Paragraph para = (Paragraph)convdic[friendnumber].FindChildren<TableRow>().Where(r => r.Tag != null && r.Tag.GetType() != typeof(FileTransfer) && ((MessageData)(r.Tag)).Id == receipt).First().FindChildren<TableCell>().ToArray()[1].Blocks.FirstBlock;
 
             if (para == null)
                 return; //row or cell doesn't exist? odd, just return
@@ -589,22 +589,29 @@ namespace Toxy
 
         private void tox_OnFileData(int friendnumber, int filenumber, byte[] data)
         {
-            FileTransfer ft = GetFileTransfer(friendnumber, filenumber);
+            try
+            {
+                FileTransfer ft = GetFileTransfer(friendnumber, filenumber);
 
-            if (ft == null)
-                return;
+                if (ft == null)
+                    return;
 
-            if (ft.Stream == null)
-                throw new NullReferenceException("Unexpectedly received data");
+                if (ft.Stream == null)
+                    throw new NullReferenceException("Unexpectedly received data");
 
-            ulong remaining = tox.FileDataRemaining(friendnumber, filenumber, 1);
-            double value = (double)remaining / (double)ft.FileSize;
+                ulong remaining = tox.FileDataRemaining(friendnumber, filenumber, 1);
+                double value = (double)remaining / (double)ft.FileSize;
 
-            ft.Control.SetProgress(100 - (int)(value * 100));
-            ft.Control.SetStatus(string.Format("{0}/{1}", ft.FileSize - remaining, ft.FileSize));
+                ft.Control.SetProgress(100 - (int)(value * 100));
+                ft.Control.SetStatus(string.Format("{0}/{1}", ft.FileSize - remaining, ft.FileSize));
 
-            if (ft.Stream.CanWrite)
-                ft.Stream.Write(data, 0, data.Length);
+                if (ft.Stream.CanWrite)
+                    ft.Stream.Write(data, 0, data.Length);
+            }
+            catch(Exception ex)
+            {
+                Logger.LogException(ex);
+            }
         }
 
         private void tox_OnFileSendRequest(int friendnumber, int filenumber, ulong filesize, string filename)
@@ -621,39 +628,55 @@ namespace Toxy
                 friend.NewMessageCount++;
             }
 
-            transfer.Control.OnAccept += delegate(int friendnum, int filenum)
+            if (this.ViewModel.Configuraion.AutoDownloadPictures && this.ViewModel.Configuraion.IsAllowedFile(filename))
             {
                 if (transfer.Stream != null)
                     return;
 
-                SaveFileDialog dialog = new SaveFileDialog();
-                dialog.FileName = filename;
-
-                if (dialog.ShowDialog() == true) //guess what, this bool is nullable
-                {
-                    transfer.Stream = new FileStream(dialog.FileName, FileMode.Create);
-                    transfer.FileName = dialog.FileName;
-                    tox.FileSendControl(friendnumber, 1, filenumber, ToxFileControl.Accept, new byte[0]);
-                }
-            };
-
-            transfer.Control.OnDecline += delegate(int friendnum, int filenum)
+                var newFileName = Path.Combine(ViewModel.Configuraion.DownloadsFolder, filename);
+                newFileName = FileHelpers.GetUniqueFilename(newFileName);
+                transfer.Stream = new FileStream(newFileName, FileMode.Create);
+                transfer.FileName = newFileName;
+                transfer.Control.FilePath = newFileName;
+                tox.FileSendControl(friendnumber, 1, filenumber, ToxFileControl.Accept, new byte[0]);
+            }
+            else
             {
-                if (!transfer.IsSender)
-                    tox.FileSendControl(friendnumber, 1, filenumber, ToxFileControl.Kill, new byte[0]);
-                else
-                    tox.FileSendControl(friendnumber, 0, filenumber, ToxFileControl.Kill, new byte[0]);
-
-                if (transfer.Thread != null)
+                transfer.Control.OnAccept += delegate(int friendnum, int filenum)
                 {
-                    transfer.Thread.Abort();
-                    transfer.Thread.Join();
-                }
+                    if (transfer.Stream != null)
+                        return;
 
-                if (transfer.Stream != null)
-                    transfer.Stream.Close();
+                    SaveFileDialog dialog = new SaveFileDialog();
+                    dialog.FileName = filename;
 
-            };
+                    if (dialog.ShowDialog() == true) //guess what, this bool is nullable
+                    {
+                        transfer.Stream = new FileStream(dialog.FileName, FileMode.Create);
+                        transfer.FileName = dialog.FileName;
+                        tox.FileSendControl(friendnumber, 1, filenumber, ToxFileControl.Accept, new byte[0]);
+                    }
+                };
+
+
+                transfer.Control.OnDecline += delegate(int friendnum, int filenum)
+                {
+                    if (!transfer.IsSender)
+                        tox.FileSendControl(friendnumber, 1, filenumber, ToxFileControl.Kill, new byte[0]);
+                    else
+                        tox.FileSendControl(friendnumber, 0, filenumber, ToxFileControl.Kill, new byte[0]);
+
+                    if (transfer.Thread != null)
+                    {
+                        transfer.Thread.Abort();
+                        transfer.Thread.Join();
+                    }
+
+                    if (transfer.Stream != null)
+                        transfer.Stream.Close();
+
+                };
+            }
 
             transfer.Control.OnFileOpen += delegate()
             {
@@ -670,6 +693,8 @@ namespace Toxy
             if (this.ViewModel.MainToxyUser.ToxStatus != ToxUserStatus.Busy)
                 this.Flash();
         }
+
+       
 
         private void tox_OnConnectionStatusChanged(int friendnumber, int status)
         {
@@ -818,7 +843,7 @@ namespace Toxy
             ScrollViewer viewer = FindScrollViewer(ChatBox);
 
             if (viewer != null)
-                    viewer.ScrollToVerticalOffset(viewer.VerticalOffset + delta);
+                viewer.ScrollToVerticalOffset(viewer.VerticalOffset + delta);
         }
 
         private static ScrollViewer FindScrollViewer(FlowDocumentScrollViewer viewer)
@@ -1156,7 +1181,7 @@ namespace Toxy
             FileButton.Visibility = Visibility.Collapsed;
             group.AdditionalInfo = string.Join(", ", tox.GetGroupNames(group.ChatNumber));
             ChatBox.Document = group.Document;
-            UIHelpers.PreloadHistory(tox,ChatBox,group.PublicKey);
+            UIHelpers.PreloadHistory(tox, ChatBox, group.PublicKey);
         }
 
         private void EndCall()
@@ -1235,10 +1260,10 @@ namespace Toxy
                 convdic.Add(friend.ChatNumber, document);
                 ChatBox.Document = convdic[friend.ChatNumber];
             }
-            
-            UIHelpers.PreloadHistory(tox, ChatBox, friendNumber);           
+
+            UIHelpers.PreloadHistory(tox, ChatBox, friendNumber);
         }
-        
+
         private void MetroWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             if (this.ViewModel.Configuraion.HideInTray)

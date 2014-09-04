@@ -88,6 +88,23 @@ namespace Toxy.Common
         }
 
         public bool InlineImages { get; set; }
+        public bool AutoDownloadPictures { get; set; }
+        public string DownloadsFolder { get; set; }
+        private string allowedFileExt = ".jpg;.jpeg;.gif;.png;.bmp";
+        public string AllowedFileExtensions
+        {
+            get {
+                
+                return allowedFileExt; 
+            }
+            set {
+                if (value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).Length > 0)
+                {
+                    allowedFileExt = value;
+                }
+            }
+        }
+
 
         private ToxConfigNode[] nodes = new ToxConfigNode[] 
         {
@@ -120,6 +137,16 @@ namespace Toxy.Common
         {
             get { return groupChats; }
             set { groupChats = value; }
+        }
+
+        internal bool IsAllowedFile(string filename)
+        {
+            foreach(var fileExt in allowedFileExt.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (filename.ToLower().EndsWith(fileExt.ToLower()))
+                    return true;
+            }
+            return false;
         }
     }
 

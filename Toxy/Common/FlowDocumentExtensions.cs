@@ -162,7 +162,7 @@ namespace Toxy.Common
             return timestampTableCell;
         }
 
-        private static void AddPreview(TableCell messageTableCell, string message)
+        public static void AddPreview(TableCell messageTableCell, string message)
         {
             var task = new Task(() =>
             {
@@ -174,15 +174,21 @@ namespace Toxy.Common
                         {
                             var previewButton = new Paragraph();
                             Image image = new Image();
-                            BitmapImage bitmapImage = new BitmapImage();
+                            BitmapImage bitmapImage = new BitmapImage();                            
+                            bitmapImage.DownloadProgress += new EventHandler<DownloadProgressEventArgs>((sender, e) =>
+                            {
+                                MainWindow.Current.ScrollChatBox(image.ActualHeight);
+                            });   
+                            bitmapImage.Changed += new EventHandler((sender, e) =>
+                            { 
+                                MainWindow.Current.ScrollChatBox(image.ActualHeight); 
+                            });
                             bitmapImage.BeginInit();
                             bitmapImage.UriSource = new Uri(message);
                             bitmapImage.EndInit();
                             image.Source = bitmapImage;
-                            image.SizeChanged += image_SizeChanged;
                             previewButton.Inlines.Add(image);
                             messageTableCell.Blocks.Add(previewButton);
-                            
                         });
                     }
                 }
@@ -194,18 +200,16 @@ namespace Toxy.Common
             task.Start();
         }
 
-        static void image_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            MainWindow.Current.ScrollChatBox(((Image)sender).ActualHeight);
-        }
 
         public static FileTransfer AddNewFileTransfer(this FlowDocument doc, Tox tox, int friendnumber, int filenumber, string filename, ulong filesize, bool is_sender)
         {
-            FileTransferControl fileTransferControl = new FileTransferControl(tox.GetName(friendnumber), friendnumber, filenumber, filename, filesize);
+            TableRow newTableRow = new TableRow();
+            TableCell fileTableCell = new TableCell();
+            FileTransferControl fileTransferControl = new FileTransferControl(tox.GetName(friendnumber), friendnumber, filenumber, filename, filesize,fileTableCell);
             FileTransfer transfer = new FileTransfer() { FriendNumber = friendnumber, FileNumber = filenumber, FileName = filename, FileSize = filesize, IsSender = is_sender, Control = fileTransferControl };
 
             Section usernameParagraph = new Section();
-            TableRow newTableRow = new TableRow();
+            
             newTableRow.Tag = transfer;
 
             BlockUIContainer fileTransferContainer = new BlockUIContainer();
@@ -216,8 +220,7 @@ namespace Toxy.Common
             usernameParagraph.Blocks.Add(fileTransferContainer);
             usernameParagraph.Padding = new Thickness(0);
 
-            TableCell fileTableCell = new TableCell();
-            fileTableCell.ColumnSpan = 2;
+            fileTableCell.ColumnSpan = 3;
             fileTableCell.Blocks.Add(usernameParagraph);
             newTableRow.Cells.Add(fileTableCell);
             fileTableCell.Padding = new Thickness(0, 10, 0, 10);

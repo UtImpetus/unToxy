@@ -151,6 +151,7 @@
     <Compile Include="Common\ListBoxScrollViewerAttachedBehavior.cs" />
     <Compile Include="Common\Logger.cs" />
     <Compile Include="Common\StringExtensions.cs" />
+    <Compile Include="Common\VistaPaths.cs" />
     <Compile Include="Common\VisualExtensions.cs" />
     <Compile Include="Converter\BoolToVisibilityConverter.cs" />
     <Compile Include="Converter\NullToVisibilityConverter.cs" />
@@ -159,6 +160,7 @@
       <DependentUpon>UserPrompt.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utils\ChatHistoryHelper.cs" />
+    <Compile Include="Utils\FileHelpers.cs" />
     <Compile Include="Utils\GroupChatHelpers.cs" />
     <Compile Include="Utils\HttpHelpers.cs" />
     <Compile Include="ToxHelpers\GdiWrapper.cs" />

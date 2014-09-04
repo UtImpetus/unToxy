@@ -16,14 +16,22 @@ namespace Toxy.Utils
             try
             {
                 var uriResult = default(Uri);
-                bool result = Uri.TryCreate(URL, UriKind.Absolute, out uriResult) && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+                bool result = Uri.TryCreate(URL, UriKind.Absolute, out uriResult) && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps || uriResult.Scheme == Uri.UriSchemeFile);
                 if (result)
                 {
-                    var req = (HttpWebRequest)HttpWebRequest.Create(URL);
-                    req.Method = "HEAD";
-                    using (var resp = req.GetResponse())
+                    var request = HttpWebRequest.Create(URL);
+                    if (request is HttpWebRequest)
                     {
-                        return resp.ContentType.ToLower(CultureInfo.InvariantCulture).StartsWith("image/");
+                        var req = (HttpWebRequest)request;
+                        req.Method = "HEAD";
+                        using (var resp = req.GetResponse())
+                        {
+                            return resp.ContentType.ToLower(CultureInfo.InvariantCulture).StartsWith("image/");
+                        }
+                    }
+                    else
+                    {
+                        return URL.ToLower().EndsWith(".jpg") || URL.ToLower().EndsWith(".jpeg") || URL.ToLower().EndsWith(".png") || URL.ToLower().EndsWith(".gif");
                     }
                 }
             }

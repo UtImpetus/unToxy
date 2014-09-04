@@ -8,6 +8,7 @@ using Toxy.MVVM;
 using NAudio.Wave;
 using Toxy.Common;
 using System.IO;
+using System;
 
 namespace Toxy.ViewModels
 {
@@ -83,6 +84,17 @@ namespace Toxy.ViewModels
                 if (conf == null)
                 {
                     conf = ConfigTools.Load("config.xml");
+                    if (string.IsNullOrEmpty(conf.DownloadsFolder))
+                    {
+                        try
+                        {
+                            conf.DownloadsFolder = VistaPaths.GetUserFolderPath(UserFolder.Downloads);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogException(ex);
+                        }
+                    }
                 }
                 return conf; 
             }

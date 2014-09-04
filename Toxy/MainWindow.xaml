@@ -510,19 +510,31 @@
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
                               Width="275" />
-                    <CheckBox x:Name="PreloadImagesCheckBox"
-                              Margin="15,430,0,0"
+                    <StackPanel Orientation="Vertical" Margin="15,430,0,0" CanVerticallyScroll="True" >
+                        <CheckBox x:Name="PreloadImagesCheckBox"                              
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
                               IsChecked="{Binding Configuraion.InlineImages, Mode=TwoWay}"
-                              Content="Show inline images"
-                              />
-                    <CheckBox x:Name="HideInTrayCheckBox"
-                              Margin="15,460,0,0"
+                              Content="Show inline images" />
+                        <CheckBox x:Name="AutoDownloadImages"                              
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
-                              Content="Hide in tray"
-                              />
+                              IsChecked="{Binding Configuraion.AutoDownloadPictures, Mode=TwoWay}"
+                              Content="Auto download images"  />
+                        <StackPanel Orientation="Horizontal">
+                            <Label>Allowed File Types</Label>
+                            <TextBox VerticalAlignment="Center" Text="{Binding Configuraion.AllowedFileExtensions, Mode=TwoWay}" ></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label>Allowed extensions</Label>
+                            <TextBox VerticalAlignment="Center" Text="{Binding Configuraion.DownloadsFolder, Mode=TwoWay}" ></TextBox>
+                        </StackPanel>
+                        <CheckBox x:Name="HideInTrayCheckBox"
+                              VerticalAlignment="Top"
+                              HorizontalAlignment="Left"
+                              Content="Hide in tray"  />
+                    </StackPanel>                                                    
+                    
                     <Button x:Name="SaveSettingsButton"
                             Content="Save"
                             Margin="0,242,10,10"
