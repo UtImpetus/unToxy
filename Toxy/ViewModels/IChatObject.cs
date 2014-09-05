@@ -13,5 +13,7 @@ namespace Toxy.ViewModels
         string StatusMessage { get; set; }
         string AdditionalInfo { get; set; }
         ToxUserStatus ToxStatus { get; set; }
+        bool Visible { get; set; }
+        string GroupName { get; set; }
     }
 }

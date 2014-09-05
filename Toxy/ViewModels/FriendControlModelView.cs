@@ -12,6 +12,7 @@ namespace Toxy.ViewModels
         public FriendControlModelView(MainWindowViewModel mainViewModel)
         {
             this.MainViewModel = mainViewModel;
+            visible = true;
         }
 
         public MainWindowViewModel MainViewModel { get; set; }
@@ -267,5 +268,26 @@ namespace Toxy.ViewModels
 
         public int CallIndex { get; set; }
         public string PublicKey { get; set; }
+        private string contactGroupName;
+
+        public string GroupName
+        {
+            get { return contactGroupName; }
+            set { 
+                contactGroupName = value;
+            }
+        }
+
+
+        private bool visible;
+
+        public bool Visible
+        {
+            get { return visible; }
+            set { visible = value;
+            this.OnPropertyChanged(() => this.Visible);
+            }
+        }
+
     }
 }

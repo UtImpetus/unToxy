@@ -155,6 +155,10 @@
                                            Visibility="{Binding Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
 
                         <!-- bind to collection of friends and groups -->
+                        <StackPanel Margin="0,0,0,10">
+                            <Label>Search friends and groups:</Label>
+                            <TextBox KeyUp="SerchTextBoxChanged" />
+                        </StackPanel>
                         <ListBox x:Name="ChatsListBox"
                                  Grid.Row="1"
                                  common:ListBoxScrollViewerAttachedBehavior.ScrollingLines="1"
@@ -162,11 +166,28 @@
                                  HorizontalContentAlignment="Stretch"
                                  ItemsSource="{Binding ChatCollection, Mode=OneWay}"
                                  SelectedItem="{Binding SelectedChatObject}">
+                            <ListBox.GroupStyle>
+                                <GroupStyle>
+                                    <GroupStyle.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock FontWeight="Bold" FontSize="14" Text="{Binding Name}"/>
+                                        </DataTemplate>
+                                    </GroupStyle.HeaderTemplate>
+                                </GroupStyle>
+                            </ListBox.GroupStyle>
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="{x:Type ListBoxItem}"
                                        BasedOn="{StaticResource ToxyMetroListBoxItem}">
                                     <Setter Property="IsSelected"
                                             Value="{Binding Selected}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Visible}" Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Visible}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
                                 </Style>
                             </ListBox.ItemContainerStyle>
                             <ListBox.Resources>
@@ -452,7 +473,7 @@
                              Text=""
                              VerticalAlignment="Top"
                              Width="275"
-                             Margin="15,41,0,0" />                    
+                             Margin="15,41,0,0" />
                     <Label Content="Enter your desired status message"
                            HorizontalAlignment="Left"
                            VerticalAlignment="Top"
@@ -526,15 +547,15 @@
                             <TextBox VerticalAlignment="Center" Text="{Binding Configuraion.AllowedFileExtensions, Mode=TwoWay}" ></TextBox>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <Label>Allowed extensions</Label>
+                            <Label>Downloads folder</Label>
                             <TextBox VerticalAlignment="Center" Text="{Binding Configuraion.DownloadsFolder, Mode=TwoWay}" ></TextBox>
                         </StackPanel>
                         <CheckBox x:Name="HideInTrayCheckBox"
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
                               Content="Hide in tray"  />
-                    </StackPanel>                                                    
-                    
+                    </StackPanel>
+
                     <Button x:Name="SaveSettingsButton"
                             Content="Save"
                             Margin="0,242,10,10"

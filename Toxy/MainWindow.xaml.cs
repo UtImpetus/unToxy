@@ -33,6 +33,7 @@ using Brushes = System.Windows.Media.Brushes;
 using NAudio.Wave;
 using Toxy.Utils;
 using System.Windows.Threading;
+using System.Windows.Data;
 
 namespace Toxy
 {
@@ -160,12 +161,21 @@ namespace Toxy
                 }
             }
 
+            this.ChatsListBox.Items.CurrentChanged += ChatsListBox_SourceUpdated;
+
             DispatcherTimer dispatcherTimer = new DispatcherTimer();
             dispatcherTimer.Tick += dispatcherTimer_Tick;
             dispatcherTimer.Interval = new TimeSpan(0, 0, 5);
             dispatcherTimer.Start();
         }
 
+        private void ChatsListBox_SourceUpdated(object sender, EventArgs e)
+        {
+            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(ChatsListBox.ItemsSource);
+            PropertyGroupDescription groupDescription = new PropertyGroupDescription("GroupName");
+            view.GroupDescriptions.Add(groupDescription);
+        }
+        
         void dispatcherTimer_Tick(object sender, EventArgs e)
         {
             try
@@ -608,7 +618,7 @@ namespace Toxy
                 if (ft.Stream.CanWrite)
                     ft.Stream.Write(data, 0, data.Length);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.LogException(ex);
             }
@@ -693,8 +703,6 @@ namespace Toxy
             if (this.ViewModel.MainToxyUser.ToxStatus != ToxUserStatus.Busy)
                 this.Flash();
         }
-
-       
 
         private void tox_OnConnectionStatusChanged(int friendnumber, int status)
         {
@@ -918,6 +926,7 @@ namespace Toxy
             {
                 AddFriendToView(friendNumber);
             }
+            
         }
 
         private GroupControlModelView AddGroupToView(int groupnumber)
@@ -1022,6 +1031,7 @@ namespace Toxy
             var friendMV = new FriendControlModelView(this.ViewModel);
             friendMV.ChatNumber = friendNumber;
             friendMV.Name = friendName;
+            friendMV.GroupName = friendName[0].ToString();
             friendMV.StatusMessage = friendStatus;
             friendMV.ToxStatus = ToxUserStatus.Invalid;
             friendMV.SelectedAction = FriendSelectedAction;
@@ -1124,6 +1134,7 @@ namespace Toxy
             var friendMV = new FriendControlModelView(this.ViewModel);
             friendMV.IsRequest = true;
             friendMV.Name = id;
+            friendMV.GroupName = friendMV.Name[0].ToString();
             friendMV.ToxStatus = ToxUserStatus.Invalid;
             friendMV.RequestMessageData = new MessageData() { Message = message, Username = "Request Message" };
             friendMV.RequestFlowDocument = UIHelpers.GetNewFlowDocument();
@@ -1793,6 +1804,20 @@ namespace Toxy
             var theme = ThemeManager.DetectAppStyle(System.Windows.Application.Current);
             var appTheme = ThemeManager.GetAppTheme(((AppThemeMenuData)AppThemeComboBox.SelectedItem).Name);
             ThemeManager.ChangeAppStyle(System.Windows.Application.Current, theme.Item2, appTheme);
+        }
+
+        private void SerchTextBoxChanged(object sender, KeyEventArgs e)
+        {
+            var senderTextbox = (TextBox)sender;
+
+            foreach (var contact in this.ViewModel.ChatCollection.Where(v => v.Name.ToLower().Contains(senderTextbox.Text.ToLower())))
+            {
+                contact.Visible = true;
+            }
+            foreach (var contact in this.ViewModel.ChatCollection.Where(v => !v.Name.ToLower().Contains(senderTextbox.Text.ToLower())))
+            {
+                contact.Visible = false;
+            }
         }
     }
 }

@@ -19,6 +19,7 @@ namespace Toxy.ViewModels
         public GroupControlModelView()
         {
             Document = UIHelpers.GetNewFlowDocument();
+            Visible = true;
         }
 
         private ICommand deleteCommand;
@@ -174,7 +175,24 @@ namespace Toxy.ViewModels
             get { return document; }
             set { document = value; }
         }
+        private string contactGroupName;
 
-        
+        public string GroupName
+        {
+            get { return contactGroupName; }
+            set { contactGroupName = value; }
+        }
+
+        private bool visible;
+
+        public bool Visible
+        {
+            get { return visible; }
+            set
+            {
+                visible = value;
+                this.OnPropertyChanged(() => this.Visible);
+            }
+        }
     }
 }
