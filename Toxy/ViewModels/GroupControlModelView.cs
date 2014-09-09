@@ -15,6 +15,7 @@ namespace Toxy.ViewModels
         public Action<IGroupObject, bool> SelectedAction { get; set; }
         public Action<IGroupObject> DeleteAction { get; set; }
         public Action<IGroupObject> RenameAction { get; set; }
+        public Action<IFriendObject, string> MoveToContactGroupAction { get; set; }
 
         public GroupControlModelView()
         {
@@ -193,6 +194,6 @@ namespace Toxy.ViewModels
                 visible = value;
                 this.OnPropertyChanged(() => this.Visible);
             }
-        }
+        }        
     }
 }

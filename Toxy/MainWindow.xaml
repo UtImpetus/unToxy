@@ -150,24 +150,28 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <views:CallControl Grid.Row="0"
-                                           DataContext="{Binding CallingFriend, Mode=OneWay}"
-                                           Visibility="{Binding Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
-
                         <!-- bind to collection of friends and groups -->
                         <StackPanel Margin="0,0,0,10">
+                            <views:CallControl Grid.Row="0"
+                                           DataContext="{Binding CallingFriend, Mode=OneWay}"
+                                           Visibility="{Binding Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
                             <Label>Search friends and groups:</Label>
                             <TextBox KeyUp="SerchTextBoxChanged" />
                         </StackPanel>
+                       
                         <ListBox x:Name="ChatsListBox"
                                  Grid.Row="1"
-                                 common:ListBoxScrollViewerAttachedBehavior.ScrollingLines="1"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  HorizontalContentAlignment="Stretch"
                                  ItemsSource="{Binding ChatCollection, Mode=OneWay}"
                                  SelectedItem="{Binding SelectedChatObject}">
                             <ListBox.GroupStyle>
                                 <GroupStyle>
+                                    <GroupStyle.Panel>
+                                        <ItemsPanelTemplate>
+                                            <VirtualizingStackPanel/>
+                                        </ItemsPanelTemplate>
+                                    </GroupStyle.Panel>
                                     <GroupStyle.HeaderTemplate>
                                         <DataTemplate>
                                             <TextBlock FontWeight="Bold" FontSize="14" Text="{Binding Name}"/>
@@ -199,7 +203,6 @@
                                 </DataTemplate>
                             </ListBox.Resources>
                         </ListBox>
-
                     </Grid>
                 </TabItem>
                 <TabItem x:Name="RequestsTabItem"
@@ -462,99 +465,102 @@
                              Position="Right"
                              Width="325" IsOpenChanged="SettingsFlyout_IsOpenChanged">
                 <Grid>
-                    <Label Content="Enter your desired username"
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" Padding="0,0,0,40">
+                        <StackPanel Orientation="Vertical" Margin="10,0,0,0">
+                            <Label Content="Enter your desired username"
                            HorizontalAlignment="Left"
-                           Margin="10,10,0,0"
+                           Margin="0,5,0,0"
                            VerticalAlignment="Top" />
-                    <TextBox x:Name="SettingsUsername"
+                            <TextBox x:Name="SettingsUsername"
                              HorizontalAlignment="Left"
                              Height="23"
                              TextWrapping="Wrap"
                              Text=""
                              VerticalAlignment="Top"
                              Width="275"
-                             Margin="15,41,0,0" />
-                    <Label Content="Enter your desired status message"
+                             Margin="5,5,0,0" />
+                            <Label Content="Enter your desired status message"
                            HorizontalAlignment="Left"
                            VerticalAlignment="Top"
-                           Margin="10,82,0,0" />
-                    <TextBox x:Name="SettingsStatus"
+                           Margin="0,5,0,0" />
+                            <TextBox x:Name="SettingsStatus"
                              AcceptsReturn="True"
                              HorizontalAlignment="Left"
                              Height="41"
-                             Margin="15,113,0,0"
+                             Margin="5,5,0,0"
                              TextWrapping="Wrap"
                              VerticalAlignment="Top"
                              Width="275" />
-                    <Label Content="Change nospam (note: this will change your id)"
+                            <Label Content="Change nospam (note: this will change your id)"
                            HorizontalAlignment="Left"
-                           Margin="10,169,0,0" />
-                    <TextBox x:Name="SettingsNospam"
+                           Margin="0,5,0,0" />
+                            <TextBox x:Name="SettingsNospam"
                              AcceptsReturn="True"
                              HorizontalAlignment="Left"
                              Height="23"
-                             Margin="15,200,0,0"
+                             Margin="5,5,0,0"
                              TextWrapping="Wrap"
                              VerticalAlignment="Top"
                              Width="275" />
-                    <Label Content="Pick an accent color"
+
+                            <Label Content="Pick an accent color"
                            HorizontalAlignment="Left"
-                           Margin="10,239,0,0" />
-                    <ComboBox x:Name="AccentComboBox"
+                           Margin="0,5,0,0" />
+                            <ComboBox x:Name="AccentComboBox"
                               ItemsSource="{Binding AccentColors}"
                               DisplayMemberPath="Name"
-                              Margin="15,270,0,0"
+                              Margin="5,5,0,0"
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
                               Width="275" SelectionChanged="AccentComboBox_SelectionChanged" />
-                    <ComboBox x:Name="AppThemeComboBox"
+                            <ComboBox x:Name="AppThemeComboBox"
                               ItemsSource="{Binding AppThemes}"
                               DisplayMemberPath="Name"
-                              Margin="15,300,0,0"
+                              Margin="5,5,0,0"
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
                               Width="275" SelectionChanged="AppThemeComboBox_SelectionChanged" ></ComboBox>
-                    <Label Content="Choose which devices should be used"
+
+                            <Label Content="Choose which devices should be used"
                            HorizontalAlignment="Left"
-                           Margin="10,339,0,0" />
-                    <ComboBox x:Name="InputDevicesComboBox"
+                           Margin="0,5,0,0" />
+                            <ComboBox x:Name="InputDevicesComboBox"
                               ItemsSource="{Binding InputDevices}"
                               DisplayMemberPath="Name"
-                              Margin="15,370,0,0"
+                              Margin="5,5,0,0"
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
                               Width="275" />
-                    <ComboBox x:Name="OutputDevicesComboBox"
+                            <ComboBox x:Name="OutputDevicesComboBox"
                               ItemsSource="{Binding OutputDevices}"
                               DisplayMemberPath="Name"
-                              Margin="15,400,0,0"
+                              Margin="5,5,0,0"
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
                               Width="275" />
-                    <StackPanel Orientation="Vertical" Margin="15,430,0,0" CanVerticallyScroll="True" >
-                        <CheckBox x:Name="PreloadImagesCheckBox"                              
+                            <CheckBox x:Name="PreloadImagesCheckBox"                              
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
                               IsChecked="{Binding Configuraion.InlineImages, Mode=TwoWay}"
-                              Content="Show inline images" />
-                        <CheckBox x:Name="AutoDownloadImages"                              
+                              Content="Show inline images" Margin="5,5,0,0" />
+                            <CheckBox x:Name="AutoDownloadImages"                              
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
                               IsChecked="{Binding Configuraion.AutoDownloadPictures, Mode=TwoWay}"
-                              Content="Auto download images"  />
-                        <StackPanel Orientation="Horizontal">
+                              Content="Auto download images" Margin="5,5,0,5"  />
+
                             <Label>Allowed File Types</Label>
-                            <TextBox VerticalAlignment="Center" Text="{Binding Configuraion.AllowedFileExtensions, Mode=TwoWay}" ></TextBox>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
+                            <TextBox VerticalAlignment="Center" Text="{Binding Configuraion.AllowedFileExtensions, Mode=TwoWay}" Margin="0,5,0,0" Width="270" ></TextBox>
+
                             <Label>Downloads folder</Label>
-                            <TextBox VerticalAlignment="Center" Text="{Binding Configuraion.DownloadsFolder, Mode=TwoWay}" ></TextBox>
-                        </StackPanel>
-                        <CheckBox x:Name="HideInTrayCheckBox"
+                            <TextBox VerticalAlignment="Center" Text="{Binding Configuraion.DownloadsFolder, Mode=TwoWay}" Margin="0,5,0,0" Width="270" ></TextBox>
+
+                            <CheckBox x:Name="HideInTrayCheckBox"
                               VerticalAlignment="Top"
                               HorizontalAlignment="Left"
-                              Content="Hide in tray"  />
-                    </StackPanel>
+                              Content="Hide in tray" Margin="5,5,0,0"  />
+                        </StackPanel>
+                    </ScrollViewer>
 
                     <Button x:Name="SaveSettingsButton"
                             Content="Save"

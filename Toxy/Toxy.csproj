@@ -148,6 +148,7 @@
     <Compile Include="Common\Config\Config.cs" />
     <Compile Include="Common\Config\ConfigTools.cs" />
     <Compile Include="Common\Constants.cs" />
+    <Compile Include="Common\ContactGroupEntity.cs" />
     <Compile Include="Common\ListBoxScrollViewerAttachedBehavior.cs" />
     <Compile Include="Common\Logger.cs" />
     <Compile Include="Common\StringExtensions.cs" />

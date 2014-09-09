@@ -105,6 +105,16 @@ namespace Toxy.ViewModels
             }
         }
 
+        public IList<string> ContactGroups
+        {
+            get
+            {
+                var result = Configuraion.ContactGroups.Select(v => v.GroupName).Distinct().ToList();
+                result.Add("Add new...");
+                return result;
+            }
+        }
+
         public void SaveConfiguraion()
         {
             ConfigTools.Save(conf, "config.xml");

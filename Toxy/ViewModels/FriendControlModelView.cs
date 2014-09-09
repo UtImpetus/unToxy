@@ -24,6 +24,7 @@ namespace Toxy.ViewModels
         public Action<IFriendObject> DeleteAction { get; set; }
         public Action<IFriendObject> CopyIDAction { get; set; }
         public Action<IFriendObject, IGroupObject> GroupInviteAction { get; set; }
+        public Action<IFriendObject, string> MoveToContactGroupAction { get; set; }
 
         public Action<IFriendObject> AcceptAction { get; set; }
         public Action<IFriendObject> DeclineAction { get; set; }
@@ -82,6 +83,16 @@ namespace Toxy.ViewModels
             get
             {
                 return this.groupInviteCommand ?? (this.groupInviteCommand = new DelegateCommand<IGroupObject>((go) => this.GroupInviteAction(this, go), (go) => this.ToxStatus == ToxUserStatus.None && GroupInviteAction != null && go != null));
+            }
+        }
+
+        private ICommand changeContactGroupCommand;
+
+        public ICommand ChangeContactGroupCommand
+        {
+            get
+            {
+                return this.changeContactGroupCommand ?? (this.changeContactGroupCommand = new DelegateCommand<string>((go) => this.MoveToContactGroupAction(this,go), (groupName)=> !string.IsNullOrEmpty(groupName)));
             }
         }
 

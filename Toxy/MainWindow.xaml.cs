@@ -197,6 +197,7 @@ namespace Toxy
             }
             catch (Exception ex)
             {
+                Logger.LogException(ex);
                 MessageBox.Show(ex.Message);
             }
         }
@@ -279,6 +280,7 @@ namespace Toxy
         {
             ChatHistoryHelper.Close();
             this.ViewModel.Configuraion.HideInTray = false;
+            ViewModel.SaveConfiguraion();
             this.Close();
         }
 
@@ -298,10 +300,17 @@ namespace Toxy
 
         private void toxav_OnReceivedVideo(IntPtr toxav, int call_index, IntPtr frame, IntPtr userdata)
         {
-            if (call == null)
-                return;
+            try
+            {
+                if (call == null)
+                    return;
 
-            call.ProcessVideoFrame(frame);
+                call.ProcessVideoFrame(frame);
+            }
+            catch(Exception ex)
+            {
+                Logger.LogException(ex);
+            }
         }
 
         public MainWindowViewModel ViewModel
@@ -936,6 +945,7 @@ namespace Toxy
             var groupMV = new GroupControlModelView();
             groupMV.ChatNumber = groupnumber;
             groupMV.Name = groupname;
+            groupMV.GroupName = Constants.GeneralGroupName;
             groupMV.StatusMessage = string.Format("Peers online: {0}", tox.GetGroupMemberCount(groupnumber));
             groupMV.SelectedAction = GroupSelectedAction;
             groupMV.DeleteAction = GroupDeleteAction;
@@ -960,10 +970,12 @@ namespace Toxy
             groupMV.ChatNumber = -1;
             groupMV.Name = groupChat.Name;
             groupMV.PublicKey = groupChat.PublicKey;
+            groupMV.GroupName = ViewModel.Configuraion.GetContactsGroupName(groupChat.PublicKey);
             groupMV.StatusMessage = "Waiting...";
             groupMV.SelectedAction = GroupSelectedAction;
             groupMV.DeleteAction = GroupDeleteAction;
             groupMV.RenameAction = GroupRenameAction;
+            groupMV.MoveToContactGroupAction = MoveToContactGroupAction;
             this.ViewModel.ChatCollection.Add(groupMV);
         }
 
@@ -1031,7 +1043,7 @@ namespace Toxy
             var friendMV = new FriendControlModelView(this.ViewModel);
             friendMV.ChatNumber = friendNumber;
             friendMV.Name = friendName;
-            friendMV.GroupName = friendName[0].ToString();
+            friendMV.GroupName = ViewModel.Configuraion.GetContactsGroupName(tox.GetClientID(friendNumber).GetString());
             friendMV.StatusMessage = friendStatus;
             friendMV.ToxStatus = ToxUserStatus.Invalid;
             friendMV.SelectedAction = FriendSelectedAction;
@@ -1041,8 +1053,14 @@ namespace Toxy
             friendMV.DeleteAction = FriendDeleteAction;
             friendMV.GroupInviteAction = GroupInviteAction;
             friendMV.HangupAction = FriendHangupAction;
+            friendMV.MoveToContactGroupAction = MoveToContactGroupAction;
 
             this.ViewModel.ChatCollection.Add(friendMV);
+        }
+
+        private void MoveToContactGroupAction(IFriendObject friendObject, string groupName)
+        {
+            friendObject.GroupName = groupName;
         }
 
         private void FriendHangupAction(IFriendObject friendObject)
@@ -1134,7 +1152,6 @@ namespace Toxy
             var friendMV = new FriendControlModelView(this.ViewModel);
             friendMV.IsRequest = true;
             friendMV.Name = id;
-            friendMV.GroupName = friendMV.Name[0].ToString();
             friendMV.ToxStatus = ToxUserStatus.Invalid;
             friendMV.RequestMessageData = new MessageData() { Message = message, Username = "Request Message" };
             friendMV.RequestFlowDocument = UIHelpers.GetNewFlowDocument();

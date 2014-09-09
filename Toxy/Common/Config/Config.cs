@@ -1,12 +1,18 @@
 ﻿using System;
-
+using System.Linq;
 using SharpTox.Core;
+using System.Collections.Generic;
 
 namespace Toxy.Common
 {
     [Serializable]
     public class Config
     {
+        public Config()
+        {
+            ContactGroups = new List<ContactGroupEntity>();
+        }
+
         private bool udpDisabled = false;
 
         public bool UdpDisabled
@@ -93,11 +99,13 @@ namespace Toxy.Common
         private string allowedFileExt = ".jpg;.jpeg;.gif;.png;.bmp";
         public string AllowedFileExtensions
         {
-            get {
-                
-                return allowedFileExt; 
+            get
+            {
+
+                return allowedFileExt;
             }
-            set {
+            set
+            {
                 if (value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).Length > 0)
                 {
                     allowedFileExt = value;
@@ -139,9 +147,36 @@ namespace Toxy.Common
             set { groupChats = value; }
         }
 
+        public ContactGroupEntity[] ContactsGroupsSerializable
+        {
+            get
+            {
+                return ContactGroups.ToArray();
+            }
+            set
+            {
+                ContactGroups = new List<ContactGroupEntity>(value);
+            }
+        }
+
+        public List<ContactGroupEntity> ContactGroups { get; set; }
+
+        public string GetContactsGroupName(string publicKey)
+        {
+            if (ContactGroups != null)
+            {
+                var groupName = ContactGroups.FirstOrDefault(v => v.PublicKey == publicKey);
+                if (groupName != null)
+                {
+                    return groupName.GroupName;
+                }
+            }
+            return Constants.GeneralGroupName;
+        }
+
         internal bool IsAllowedFile(string filename)
         {
-            foreach(var fileExt in allowedFileExt.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var fileExt in allowedFileExt.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 if (filename.ToLower().EndsWith(fileExt.ToLower()))
                     return true;

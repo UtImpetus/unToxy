@@ -10,5 +10,6 @@ namespace Toxy.Common
     {
         public static readonly string MoreHistoryButtonName = "MoreHistoryButton";
         public static int CountHistoryItemsPreload = 200;
+        public static readonly string GeneralGroupName = "General";
     }
 }

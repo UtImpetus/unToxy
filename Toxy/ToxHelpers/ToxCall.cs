@@ -10,6 +10,7 @@ using NAudio.Wave;
 using AForge.Video;
 using AForge.Video.DirectShow;
 using System.Runtime.InteropServices;
+using Toxy.Common;
 
 namespace Toxy.ToxHelpers
 {
@@ -197,9 +198,18 @@ namespace Toxy.ToxHelpers
 
         public void Answer(ToxAvCodecSettings settings)
         {
-            ToxAvError error = toxav.Answer(CallIndex, settings);
-            if (error != ToxAvError.None)
-                throw new Exception("Could not answer call " + error.ToString());
+            try
+            {
+                ToxAvError error = toxav.Answer(CallIndex, settings);
+                if (error != ToxAvError.None)
+                {
+                    throw new Exception("Could not answer call " + error.ToString());
+                }
+            }
+            catch(Exception ex)
+            {
+                Logger.LogException(ex);
+            }
         }
 
         public void Call(int current_number, ToxAvCodecSettings settings, int ringing_seconds)

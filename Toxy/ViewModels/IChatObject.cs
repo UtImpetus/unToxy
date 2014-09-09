@@ -1,4 +1,5 @@
 ﻿using SharpTox.Core;
+using System;
 
 namespace Toxy.ViewModels
 {
@@ -15,5 +16,6 @@ namespace Toxy.ViewModels
         ToxUserStatus ToxStatus { get; set; }
         bool Visible { get; set; }
         string GroupName { get; set; }
+        Action<IFriendObject, string> MoveToContactGroupAction { get; set; }
     }
 }
