@@ -34,6 +34,7 @@ using NAudio.Wave;
 using Toxy.Utils;
 using System.Windows.Threading;
 using System.Windows.Data;
+using System.ComponentModel;
 
 namespace Toxy
 {
@@ -174,6 +175,8 @@ namespace Toxy
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(ChatsListBox.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("GroupName");
             view.GroupDescriptions.Add(groupDescription);
+            view.SortDescriptions.Add(new SortDescription("GroupName", ListSortDirection.Ascending));
+            view.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
         
         void dispatcherTimer_Tick(object sender, EventArgs e)
@@ -883,7 +886,7 @@ namespace Toxy
         {
             try
             {
-                return doc.FindChildren<TableRow>().LastOrDefault(t => t.Tag.GetType() != typeof(FileTransfer));
+                return doc.FindChildren<TableRow>().LastOrDefault(t => t.Tag != null && t.Tag.GetType() != typeof(FileTransfer));
             }
             catch (Exception ex)
             {

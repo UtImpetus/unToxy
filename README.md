@@ -28,7 +28,7 @@ Feel free to contribute.
 
 ### Screenshots
 
-![Main Window](http://img-fotki.yandex.ru/get/12/32246118.21/0_7e4af_c819933_orig)
+![Main Window](http://img-fotki.yandex.ru/get/4811/32246118.21/0_7eefd_90cdddcc_orig)
 
 Binaries
 ===
@@ -47,3 +47,4 @@ All other dependencies can be found in the packages.config file and should be do
 ### Special Thanks
 
 * punker76
+* Reverp
