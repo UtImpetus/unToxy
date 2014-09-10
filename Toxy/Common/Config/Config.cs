@@ -170,6 +170,15 @@ namespace Toxy.Common
                 {
                     return groupName.GroupName;
                 }
+                else
+                {
+                    ContactGroups.Add(new ContactGroupEntity() { GroupName = Constants.GeneralGroupName, PublicKey = publicKey });
+                }
+            }
+            else
+            {
+                ContactGroups = new List<ContactGroupEntity>();
+                ContactGroups.Add(new ContactGroupEntity() { GroupName = Constants.GeneralGroupName, PublicKey = publicKey });
             }
             return Constants.GeneralGroupName;
         }

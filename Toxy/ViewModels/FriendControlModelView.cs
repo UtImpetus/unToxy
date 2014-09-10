@@ -286,6 +286,7 @@ namespace Toxy.ViewModels
             get { return contactGroupName; }
             set { 
                 contactGroupName = value;
+                this.OnPropertyChanged(() => this.GroupName);
             }
         }
 

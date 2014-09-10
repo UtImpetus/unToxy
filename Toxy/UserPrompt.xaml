@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Please enter new name" Height="108" Width="486" ResizeMode="NoResize" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterScreen">
     <StackPanel Margin="0,0,2,0">
-        <TextBlock Text="Enter new name" />
+        <TextBlock x:Name="PromtText"  Text="Enter new name" />
         <TextBox x:Name="ResponseTextBox" />
 
         <Grid>

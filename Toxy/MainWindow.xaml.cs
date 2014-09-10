@@ -161,15 +161,15 @@ namespace Toxy
                 }
             }
 
-            this.ChatsListBox.Items.CurrentChanged += ChatsListBox_SourceUpdated;
-
+            ChatsListBox.Loaded += ChatsListBox_Loaded;
+            
             DispatcherTimer dispatcherTimer = new DispatcherTimer();
             dispatcherTimer.Tick += dispatcherTimer_Tick;
             dispatcherTimer.Interval = new TimeSpan(0, 0, 5);
             dispatcherTimer.Start();
         }
 
-        private void ChatsListBox_SourceUpdated(object sender, EventArgs e)
+        void ChatsListBox_Loaded(object sender, RoutedEventArgs e)
         {
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(ChatsListBox.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("GroupName");
@@ -1054,13 +1054,39 @@ namespace Toxy
             friendMV.GroupInviteAction = GroupInviteAction;
             friendMV.HangupAction = FriendHangupAction;
             friendMV.MoveToContactGroupAction = MoveToContactGroupAction;
+            friendMV.PublicKey = tox.GetClientID(friendNumber).GetString();
 
             this.ViewModel.ChatCollection.Add(friendMV);
         }
 
         private void MoveToContactGroupAction(IFriendObject friendObject, string groupName)
         {
-            friendObject.GroupName = groupName;
+            if (this.ViewModel.Configuraion.ContactGroups.Any(v => v.GroupName == groupName))
+            {
+                friendObject.GroupName = groupName;
+                var friend = this.ViewModel.Configuraion.ContactGroups.FirstOrDefault(v => v.PublicKey == friendObject.PublicKey);
+                if(friend!=null)
+                {
+                    friend.GroupName = groupName;
+                }
+                else
+                {
+                    this.ViewModel.Configuraion.ContactGroups.Add(new ContactGroupEntity() { GroupName = groupName, PublicKey = friendObject.PublicKey });                    
+                }
+            }
+            else
+            {
+                var dialog = new UserPrompt();
+                dialog.PromtText.Text = "Enter new group name:";
+                if (dialog.ShowDialog() == true && !string.IsNullOrEmpty(dialog.ResponseText))
+                {
+                    this.ViewModel.Configuraion.ContactGroups.Add(new ContactGroupEntity() { GroupName = dialog.ResponseText, PublicKey = friendObject.PublicKey });                    
+                    friendObject.GroupName = dialog.ResponseText;
+                }
+            }
+            this.ViewModel.SaveConfiguraion();
+            var view = CollectionViewSource.GetDefaultView(ChatsListBox.ItemsSource);
+            view.Refresh();
         }
 
         private void FriendHangupAction(IFriendObject friendObject)
