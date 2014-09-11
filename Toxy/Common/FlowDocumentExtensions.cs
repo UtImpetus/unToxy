@@ -38,13 +38,14 @@ namespace Toxy.Common
 
             Paragraph usernameParagraph = new Paragraph();
             usernameParagraph.TextAlignment = TextAlignment.Right;
+            
             usernameParagraph.Foreground = new SolidColorBrush(Color.FromRgb(164, 164, 164));
 
             if (data.Username != tox.GetSelfName())
                 usernameParagraph.SetResourceReference(Paragraph.ForegroundProperty, "AccentColorBrush");
 
             if (!sameUser)
-                usernameParagraph.Inlines.Add(data.Username);
+                usernameParagraph.Inlines.Add(new TextBlock() { Text = data.Username, TextWrapping = TextWrapping.NoWrap });
 
             usernameTableCell.Blocks.Add(usernameParagraph);
 

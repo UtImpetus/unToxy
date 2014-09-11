@@ -163,7 +163,7 @@ namespace Toxy
             }
 
             ChatsListBox.Loaded += ChatsListBox_Loaded;
-            
+
             DispatcherTimer dispatcherTimer = new DispatcherTimer();
             dispatcherTimer.Tick += dispatcherTimer_Tick;
             dispatcherTimer.Interval = new TimeSpan(0, 0, 5);
@@ -178,7 +178,7 @@ namespace Toxy
             view.SortDescriptions.Add(new SortDescription("GroupName", ListSortDirection.Ascending));
             view.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
-        
+
         void dispatcherTimer_Tick(object sender, EventArgs e)
         {
             try
@@ -310,7 +310,7 @@ namespace Toxy
 
                 call.ProcessVideoFrame(frame);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.LogException(ex);
             }
@@ -938,7 +938,7 @@ namespace Toxy
             {
                 AddFriendToView(friendNumber);
             }
-            
+
         }
 
         private GroupControlModelView AddGroupToView(int groupnumber)
@@ -1068,13 +1068,13 @@ namespace Toxy
             {
                 friendObject.GroupName = groupName;
                 var friend = this.ViewModel.Configuraion.ContactGroups.FirstOrDefault(v => v.PublicKey == friendObject.PublicKey);
-                if(friend!=null)
+                if (friend != null)
                 {
                     friend.GroupName = groupName;
                 }
                 else
                 {
-                    this.ViewModel.Configuraion.ContactGroups.Add(new ContactGroupEntity() { GroupName = groupName, PublicKey = friendObject.PublicKey });                    
+                    this.ViewModel.Configuraion.ContactGroups.Add(new ContactGroupEntity() { GroupName = groupName, PublicKey = friendObject.PublicKey });
                 }
             }
             else
@@ -1083,7 +1083,15 @@ namespace Toxy
                 dialog.PromtText.Text = "Enter new group name:";
                 if (dialog.ShowDialog() == true && !string.IsNullOrEmpty(dialog.ResponseText))
                 {
-                    this.ViewModel.Configuraion.ContactGroups.Add(new ContactGroupEntity() { GroupName = dialog.ResponseText, PublicKey = friendObject.PublicKey });                    
+                    var existUserGroup = this.ViewModel.Configuraion.ContactGroups.FirstOrDefault(v => v.PublicKey == friendObject.PublicKey);
+                    if (existUserGroup != null)
+                    {
+                        existUserGroup.GroupName = dialog.ResponseText;
+                    }
+                    else
+                    {
+                        this.ViewModel.Configuraion.ContactGroups.Add(new ContactGroupEntity() { GroupName = dialog.ResponseText, PublicKey = friendObject.PublicKey });
+                    }
                     friendObject.GroupName = dialog.ResponseText;
                 }
             }

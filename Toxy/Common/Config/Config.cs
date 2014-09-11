@@ -147,18 +147,6 @@ namespace Toxy.Common
             set { groupChats = value; }
         }
 
-        public ContactGroupEntity[] ContactsGroupsSerializable
-        {
-            get
-            {
-                return ContactGroups.ToArray();
-            }
-            set
-            {
-                ContactGroups = new List<ContactGroupEntity>(value);
-            }
-        }
-
         public List<ContactGroupEntity> ContactGroups { get; set; }
 
         public string GetContactsGroupName(string publicKey)

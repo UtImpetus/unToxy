@@ -19,7 +19,7 @@
     <Table Padding="0,0,10,0"
            Margin="0">
         <Table.Columns>
-            <TableColumn Width="100" />
+            <TableColumn Width="120" />
             <TableColumn />
             <TableColumn Width="150" />
         </Table.Columns>
