@@ -85,8 +85,14 @@ namespace Toxy.ToxHelpers
                 videoSource.Start();
 
                 videoWindow = new VideoWindow();
+                videoWindow.Closed += videoWindow_Closed;
                 videoWindow.Show();
             }
+        }
+
+        private void videoWindow_Closed(object sender, EventArgs args)
+        {
+            Stop();
         }
 
         private void video_source_NewFrame(object sender, NewFrameEventArgs eventArgs)
@@ -207,7 +213,7 @@ namespace Toxy.ToxHelpers
             toxav.Call(current_number, settings, ringing_seconds, out CallIndex);
         }
 
-        private void sendVideoFrame(System.Drawing.Bitmap frame)
+        private void sendVideoFrame(Bitmap frame)
         {
             GdiWrapper.BITMAPINFO info = new GdiWrapper.BITMAPINFO()
             {
