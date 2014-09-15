@@ -245,7 +245,10 @@ namespace Toxy
             if (para == null)
                 return; //row or cell doesn't exist? odd, just return
 
-            para.Foreground = Brushes.Black;
+            if (config.Theme == "BaseDark")
+                para.Foreground = Brushes.White;
+            else
+                para.Foreground = Brushes.Black;
         }
 
         private void toxav_OnMediaChange(int call_index, IntPtr args)
@@ -262,7 +265,7 @@ namespace Toxy
             newMessageNotifyIcon = new Icon(newMessageIconStream);
 
             this.nIcon.Icon = notifyIcon;
-            nIcon.Click += nIcon_Click;
+            nIcon.MouseClick += nIcon_MouseClick;
 
             var trayIconContextMenu = new System.Windows.Forms.ContextMenu();
             var closeMenuItem = new System.Windows.Forms.MenuItem("Exit", closeMenuItem_Click);
@@ -287,6 +290,25 @@ namespace Toxy
             nIcon.ContextMenu = trayIconContextMenu;
         }
 
+        private void nIcon_MouseClick(object sender, System.Windows.Forms.MouseEventArgs e)
+        {
+            if (e.Button != System.Windows.Forms.MouseButtons.Left)
+                return;
+
+            if (WindowState != WindowState.Normal)
+            {
+                this.Show();
+                this.WindowState = WindowState.Normal;
+                this.ShowInTaskbar = true;
+            }
+            else
+            {
+                this.Hide();
+                this.WindowState = WindowState.Minimized;
+                this.ShowInTaskbar = false;
+            }
+        }
+
         private void setStatusMenuItem_Click(object sender, EventArgs eventArgs)
         {
             SetStatus((ToxUserStatus)((System.Windows.Forms.MenuItem)sender).Tag);
@@ -303,13 +325,6 @@ namespace Toxy
         {
             config.HideInTray = false;
             this.Close();
-        }
-
-        private void nIcon_Click(object sender, EventArgs e)
-        {
-            this.Show();
-            this.WindowState = WindowState.Normal;
-            this.ShowInTaskbar = true;
         }
 
         private void toxav_OnReceivedAudio(IntPtr toxav, int call_index, short[] frame, int frame_size, IntPtr userdata)
