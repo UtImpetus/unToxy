@@ -204,16 +204,16 @@ namespace Toxy.Common
 
         public static FileTransfer AddNewFileTransfer(this FlowDocument doc, Tox tox, int friendnumber, int filenumber, string filename, ulong filesize, bool is_sender)
         {
-            TableRow newTableRow = new TableRow();
-            TableCell fileTableCell = new TableCell();
-            FileTransferControl fileTransferControl = new FileTransferControl(tox.GetName(friendnumber), friendnumber, filenumber, filename, filesize,fileTableCell);
-            FileTransfer transfer = new FileTransfer() { FriendNumber = friendnumber, FileNumber = filenumber, FileName = filename, FileSize = filesize, IsSender = is_sender, Control = fileTransferControl };
+            var fileTableCell = new TableCell();
+            var fileTransferControl = new FileTransferControl(tox.GetName(friendnumber), friendnumber, filenumber, filename, filesize, fileTableCell);
+            var transfer = new FileTransfer() { FriendNumber = friendnumber, FileNumber = filenumber, FileName = filename, FileSize = filesize, IsSender = is_sender, Control = fileTransferControl };
 
-            Section usernameParagraph = new Section();
-            
+            var usernameParagraph = new Section();
+            var newTableRow = new TableRow();
+
             newTableRow.Tag = transfer;
 
-            BlockUIContainer fileTransferContainer = new BlockUIContainer();
+            var fileTransferContainer = new BlockUIContainer();
             fileTransferControl.HorizontalAlignment = HorizontalAlignment.Stretch;
             fileTransferControl.HorizontalContentAlignment = HorizontalAlignment.Stretch;
             fileTransferContainer.Child = fileTransferControl;
@@ -226,7 +226,7 @@ namespace Toxy.Common
             newTableRow.Cells.Add(fileTableCell);
             fileTableCell.Padding = new Thickness(0, 10, 0, 10);
 
-            TableRowGroup MessageRows = (TableRowGroup)doc.FindName("MessageRows");
+            var MessageRows = (TableRowGroup)doc.FindName("MessageRows");
             MessageRows.Rows.Add(newTableRow);
 
             return transfer;
@@ -240,7 +240,7 @@ namespace Toxy.Common
 
             foreach (string part in parts)
             {
-                if (Regex.IsMatch(part, @"^(http|https|ftp|)\://|[a-zA-Z0-9\-\.]+\.[a-zA-Z](:[a-zA-Z0-9]*)?/?([a-zA-Z0-9\-\._\?\,\'/\\\+&amp;%\$#\=~])*[^\.\,\)\(\s]$"))
+                if (Regex.IsMatch(part, @"(((file|gopher|news|nntp|telnet|http|ftp|https|ftps|sftp)://)|(www\.))+(([a-zA-Z0-9\._-]+\.[a-zA-Z]{2,6})|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(/[a-zA-Z0-9\&amp;%_\./-~-]*)?", RegexOptions.IgnoreCase)/*Regex.IsMatch(part, @"^(http|https|ftp|)\://|[a-zA-Z0-9\-\.]+\.[a-zA-Z](:[a-zA-Z0-9]*)?/?([a-zA-Z0-9\-\._\?\,\'/\\\+&amp;%\$#\=~])*[^\.\,\)\(\s]$")*/)
                     urls.Add(part);
             }
 

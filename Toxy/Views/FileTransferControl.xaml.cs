@@ -4,7 +4,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using Toxy.Common;
-using Toxy.Utils;
 
 namespace Toxy.Views
 {
@@ -51,6 +50,7 @@ namespace Toxy.Views
         {
             Dispatcher.BeginInvoke(((Action)(() => MessageLabel.Content = status)));
         }
+
 
         public void TransferFinished(bool complete=true)
         {
@@ -114,5 +114,6 @@ namespace Toxy.Views
                 FolderOpenButton.Visibility = Visibility.Collapsed;
             })));
         }
+
     }
 }

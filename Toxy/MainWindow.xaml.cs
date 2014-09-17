@@ -143,6 +143,12 @@ namespace Toxy
             SetStatus(null);
             InitFriends();
 
+            TextToSend.AddHandler(DragOverEvent, new DragEventHandler(Chat_DragOver), true);
+            TextToSend.AddHandler(DropEvent, new DragEventHandler(Chat_Drop), true);
+
+            ChatBox.AddHandler(DragOverEvent, new DragEventHandler(Chat_DragOver), true);
+            ChatBox.AddHandler(DropEvent, new DragEventHandler(Chat_Drop), true);
+
             if (tox.GetFriendlistCount() > 0)
                 this.ViewModel.SelectedChatObject = this.ViewModel.ChatCollection.OfType<IFriendObject>().FirstOrDefault();
 
@@ -195,6 +201,45 @@ namespace Toxy
                 Logger.LogException(ex);
                 MessageBox.Show(ex.Message);
             }
+        }
+
+        private async void Chat_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) && tox.GetFriendConnectionStatus(this.ViewModel.SelectedChatNumber) == 1)
+            {
+                var docPath = (string[]) e.Data.GetData(DataFormats.FileDrop);
+                MetroDialogOptions.ColorScheme = MetroDialogColorScheme.Theme;
+
+                var mySettings = new MetroDialogSettings()
+                {
+                    AffirmativeButtonText = "Yes",
+                    FirstAuxiliaryButtonText = "Cancel",
+                    AnimateShow = false,
+                    AnimateHide = false,
+                    ColorScheme = MetroDialogColorScheme.Theme
+                };
+
+                MessageDialogResult result = await this.ShowMessageAsync("Please confirm", "Are you sure you want to send this file?",
+                MessageDialogStyle.AffirmativeAndNegative, mySettings);
+
+                if (result == MessageDialogResult.Affirmative)
+                {
+                    SendFile(this.ViewModel.SelectedChatNumber, docPath[0]);
+                }
+            }
+        }
+
+        private void Chat_DragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) && tox.GetFriendConnectionStatus(this.ViewModel.SelectedChatNumber) == 1)
+            {
+                e.Effects = DragDropEffects.All;
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
+            e.Handled = false;
         }
 
         private void loadTox()
@@ -263,6 +308,11 @@ namespace Toxy
                     }
                     else
                     {
+                        string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Tox");
+
+                        if (!Directory.Exists(dir))
+                            Directory.CreateDirectory(dir);
+
                         File.Move("data", path);
 
                         tox.Load(path);
@@ -293,7 +343,10 @@ namespace Toxy
             if (para == null)
                 return; //row or cell doesn't exist? odd, just return
 
-            para.Foreground = Brushes.Black;
+            if (this.ViewModel.Configuraion.Theme == "BaseDark")
+                para.Foreground = Brushes.White;
+            else
+                para.Foreground = Brushes.Black;
         }
 
         private void toxav_OnMediaChange(int call_index, IntPtr args)
@@ -1892,14 +1945,20 @@ namespace Toxy
                 return;
 
             string filename = dialog.FileName;
+
+            SendFile(selectedChatNumber, filename);
+        }
+
+        private void SendFile(int chatNumber, string filename)
+        {
             FileInfo info = new FileInfo(filename);
-            int filenumber = tox.NewFileSender(selectedChatNumber, (ulong)info.Length, filename.Split('\\').Last<string>());
+            int filenumber = tox.NewFileSender(chatNumber, (ulong)info.Length, filename.Split('\\').Last<string>());
 
             if (filenumber == -1)
                 return;
 
-            FileTransfer ft = convdic[selectedChatNumber].AddNewFileTransfer(tox, selectedChatNumber, filenumber, filename, (ulong)info.Length, true);
-            ft.Control.SetStatus(string.Format("Waiting for {0} to accept...", tox.GetName(selectedChatNumber)));
+            FileTransfer ft = convdic[chatNumber].AddNewFileTransfer(tox, chatNumber, filenumber, filename, (ulong)info.Length, true);
+            ft.Control.SetStatus(string.Format("Waiting for {0} to accept...", tox.GetName(chatNumber)));
             ft.Control.AcceptButton.Visibility = Visibility.Collapsed;
             ft.Control.DeclineButton.Visibility = Visibility.Visible;
 
