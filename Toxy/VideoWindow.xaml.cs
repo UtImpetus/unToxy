@@ -5,12 +5,14 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
+using MahApps.Metro.Controls;
+
 namespace Toxy
 {
     /// <summary>
     /// Interaction logic for VideoWindow.xaml
     /// </summary>
-    public partial class VideoWindow : Window
+    public partial class VideoWindow : MetroWindow
     {
         public VideoWindow()
         {
@@ -40,6 +42,16 @@ namespace Toxy
 
                 return bitmap;
             }
+        }
+
+        private void CurrentVideoFrame_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            InfoFlyout.IsOpen = !InfoFlyout.IsOpen;
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }

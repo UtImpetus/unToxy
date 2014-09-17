@@ -1,10 +1,48 @@
-﻿<Window x:Class="Toxy.VideoWindow"
+﻿<controls:MetroWindow xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        x:Class="Toxy.VideoWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="VideoWindow" Height="300" Width="300">
+        Title="Video" Height="300" Width="300">
     <Grid>
         <Image
-            Name="CurrentVideoFrame">
+            Name="CurrentVideoFrame"
+            MouseUp="CurrentVideoFrame_MouseUp">
         </Image>
     </Grid>
-</Window>
+    <controls:MetroWindow.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Toxy;component/Resources/Icons.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </controls:MetroWindow.Resources>
+    <controls:MetroWindow.Flyouts>
+        <controls:FlyoutsControl>
+            <controls:Flyout 
+                            Name="InfoFlyout"
+                            Header="Chatting with Janice"
+                            IsOpen="True"
+                            Position="Bottom">
+                <StackPanel Height="80"
+                                Margin="5,5,5,5"
+                                HorizontalAlignment="Right"
+                                Orientation="Horizontal">
+                    <Button Width="40"
+                            Click="Button_Click"
+                                Height="40"
+                                FontFamily="Segoe UI Symbol"
+                                FontSize="16"
+                                Style="{DynamicResource MetroCircleButtonStyle}">
+                        <Rectangle Width="20"
+                                       Height="20">
+                            <Rectangle.Fill>
+                                <VisualBrush Stretch="Fill"
+                                                 Visual="{StaticResource appbar_phone_hangup}" />
+                            </Rectangle.Fill>
+                        </Rectangle>
+                    </Button>
+                </StackPanel>
+            </controls:Flyout>
+        </controls:FlyoutsControl>
+    </controls:MetroWindow.Flyouts>
+</controls:MetroWindow>
