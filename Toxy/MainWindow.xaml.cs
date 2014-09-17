@@ -310,7 +310,7 @@ namespace Toxy
             newMessageNotifyIcon = new Icon(newMessageIconStream);
 
             this.nIcon.Icon = notifyIcon;
-            nIcon.Click += nIcon_Click;
+            nIcon.MouseClick += nIcon_MouseClick;
 
             var trayIconContextMenu = new System.Windows.Forms.ContextMenu();
             var closeMenuItem = new System.Windows.Forms.MenuItem("Exit", closeMenuItem_Click);
@@ -335,14 +335,35 @@ namespace Toxy
             nIcon.ContextMenu = trayIconContextMenu;
         }
 
+        private void nIcon_MouseClick(object sender, System.Windows.Forms.MouseEventArgs e)
+        {
+            if (e.Button != System.Windows.Forms.MouseButtons.Left)
+                return;
+
+            if (WindowState != WindowState.Normal)
+            {
+                this.Show();
+                this.WindowState = WindowState.Normal;
+                this.ShowInTaskbar = true;
+            }
+            else
+            {
+                this.Hide();
+                this.WindowState = WindowState.Minimized;
+                this.ShowInTaskbar = false;
+            }
+        }
+
         private void setStatusMenuItem_Click(object sender, EventArgs eventArgs)
         {
             SetStatus((ToxUserStatus)((System.Windows.Forms.MenuItem)sender).Tag);
         }
 
-        void openMenuItem_Click(object sender, EventArgs e)
+        private void openMenuItem_Click(object sender, EventArgs e)
         {
+            this.Show();
             this.WindowState = WindowState.Normal;
+            this.ShowInTaskbar = true;
         }
 
         private void closeMenuItem_Click(object sender, EventArgs eventArgs)
@@ -351,12 +372,6 @@ namespace Toxy
             this.ViewModel.Configuraion.HideInTray = false;
             ViewModel.SaveConfiguraion();
             this.Close();
-        }
-
-        private void nIcon_Click(object sender, EventArgs e)
-        {
-            this.WindowState = WindowState.Normal;
-            this.Activate();
         }
 
         private void toxav_OnReceivedAudio(IntPtr toxav, int call_index, short[] frame, int frame_size, IntPtr userdata)
@@ -1410,6 +1425,7 @@ namespace Toxy
                 e.Cancel = true;
                 this.ShowInTaskbar = false;
                 this.WindowState = WindowState.Minimized;
+                this.Hide();
             }
             else
             {
@@ -1430,6 +1446,8 @@ namespace Toxy
 
                 toxav.Dispose();
                 tox.Dispose();
+
+                nIcon.Dispose();
             }
         }
 
