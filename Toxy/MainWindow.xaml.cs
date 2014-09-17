@@ -56,7 +56,7 @@ namespace Toxy
         private Accent oldAccent;
         private AppTheme oldAppTheme;
 
-        private string toxDataFilename = "data";
+        private string toxDataFilename = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Tox\\tox_save");
 
         private DateTime emptyLastOnline = new DateTime(1970, 1, 1, 0, 0, 0);
         System.Windows.Forms.NotifyIcon nIcon = new System.Windows.Forms.NotifyIcon();
@@ -129,15 +129,7 @@ namespace Toxy
             if (!bootstrap_success)
                 Console.WriteLine("Could not bootstrap from any node!");
 
-            if (File.Exists(toxDataFilename))
-            {
-                if (!tox.Load(toxDataFilename))
-                {
-                    MessageBox.Show("Could not load tox data, this program will now exit.", "Error");
-                    Close();
-                }
-            }
-
+            loadTox();
             tox.Start();
 
             if (string.IsNullOrEmpty(tox.GetSelfName()))
@@ -202,6 +194,80 @@ namespace Toxy
             {
                 Logger.LogException(ex);
                 MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void loadTox()
+        {
+            if (File.Exists(toxDataFilename) && !this.ViewModel.Configuraion.Portable)
+            {
+                if (!tox.Load(toxDataFilename))
+                {
+                    MessageBox.Show("Could not load tox data, this program will now exit.", "Error");
+                    Close();
+                }
+            }
+            else if (File.Exists("tox_save"))
+            {
+                if (!this.ViewModel.Configuraion.Portable)
+                {
+                    if (tox.Load("tox_save"))
+                    {
+                        string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Tox");
+
+                        if (!Directory.Exists(dir))
+                            Directory.CreateDirectory(dir);
+
+                        if (tox.Save(toxDataFilename))
+                            File.Delete("tox_save");
+                    }
+                }
+                else
+                {
+                    if (!tox.Load("tox_save"))
+                    {
+                        MessageBox.Show("Could not load tox data, this program will now exit.", "Error");
+                        Close();
+                    }
+                }
+            }
+            else if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Tox\\data")))
+            {
+                MessageBoxResult result = MessageBox.Show("Could not find your tox_save file.\nWe did find a file named \"data\" located in AppData though, do you want to load this file?\nNote: We'll rename the \"data\" file to \"tox_save\" for you", "Notice", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Tox");
+                    File.Move(Path.Combine(path, "data"), Path.Combine(path, "tox_save"));
+
+                    tox.Load(Path.Combine(path, "tox_save"));
+                }
+            }
+            else if (File.Exists("data"))
+            {
+                MessageBoxResult result = MessageBox.Show("Could not find your tox_save file.\nWe did find a file named \"data\" though, do you want to load this file?\nNote: We'll rename the \"data\" file to \"tox_save\" for you", "Notice", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                MessageBoxResult result2 = MessageBox.Show("Do you want to move \"tox_save\" to AppData?\nThis will make it easier to switch between Tox clients.", "Notice", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Tox\\tox_save");
+
+                    if (result2 != MessageBoxResult.Yes)
+                    {
+                        File.Move("data", "tox_save");
+
+                        this.ViewModel.Configuraion.Portable = true;
+                        ConfigTools.Save(this.ViewModel.Configuraion, "config.xml");
+
+                        tox.Load("tox_save");
+                    }
+                    else
+                    {
+                        File.Move("data", path);
+
+                        tox.Load(path);
+                    }
+                }
             }
         }
 
@@ -1131,7 +1197,15 @@ namespace Toxy
             friendObject.GroupInviteAction = null;
             friendObject.MainViewModel = null;
 
-            tox.Save(toxDataFilename);
+            saveTox();
+        }
+
+        private void saveTox()
+        {
+            if (!this.ViewModel.Configuraion.Portable)
+                tox.Save(toxDataFilename);
+            else
+                tox.Save("tox_save");
         }
 
         private void FriendCopyIdAction(IFriendObject friendObject)
@@ -1222,7 +1296,7 @@ namespace Toxy
             friendObject.DeclineAction = null;
             friendObject.MainViewModel = null;
 
-            tox.Save(toxDataFilename);
+            saveTox();
         }
 
         private void FriendRequestDeclineAction(IFriendObject friendObject)
@@ -1352,7 +1426,7 @@ namespace Toxy
                     }
                 }
 
-                tox.Save(toxDataFilename);
+                saveTox();
 
                 toxav.Dispose();
                 tox.Dispose();
@@ -1391,6 +1465,8 @@ namespace Toxy
                     OutputDevicesComboBox.SelectedIndex = this.ViewModel.Configuraion.OutputDevice;
 
                 HideInTrayCheckBox.IsChecked = this.ViewModel.Configuraion.HideInTray;
+                HideInTrayCheckBox.IsChecked = this.ViewModel.Configuraion.HideInTray;
+                PortableCheckBox.IsChecked = this.ViewModel.Configuraion.Portable;
             }
 
             SettingsFlyout.IsOpen = !SettingsFlyout.IsOpen;
@@ -1448,7 +1524,7 @@ namespace Toxy
             AddFriendMessage.Document.Blocks.Clear();
             AddFriendMessage.Document.Blocks.Add(new Paragraph(new Run("Hello, I'd like to add you to my friends list.")));
 
-            tox.Save(toxDataFilename);
+            saveTox();
             FriendFlyout.IsOpen = false;
         }
 
@@ -1507,10 +1583,12 @@ namespace Toxy
             if (index != 0 && WaveOut.DeviceCount > 0 && WaveOut.DeviceCount >= index)
                 this.ViewModel.Configuraion.OutputDevice = index - 1;
 
+            this.ViewModel.Configuraion.Portable = (bool)PortableCheckBox.IsChecked;
+
             ExecuteActionsOnNotifyIcon();
 
             this.ViewModel.SaveConfiguraion();
-            tox.Save(toxDataFilename);
+            saveTox();
         }
 
         private void TextToSend_KeyDown(object sender, KeyEventArgs e)
@@ -1872,6 +1950,19 @@ namespace Toxy
             {
                 contact.Visible = false;
             }
+        }
+
+        private void ExportDataButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog dialog = new SaveFileDialog();
+            dialog.Title = "Export Tox data";
+            dialog.InitialDirectory = Environment.CurrentDirectory;
+
+            if (dialog.ShowDialog() != true)
+                return;
+
+            try { File.WriteAllBytes(dialog.FileName, tox.GetDataBytes()); }
+            catch { this.ShowMessageAsync("Error", "Could not export data."); }
         }
     }
 }
